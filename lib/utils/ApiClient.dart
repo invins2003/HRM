@@ -1,0 +1,207 @@
+// import 'package:get/get_connect/connect.dart';
+// import 'package:get/get_state_manager/src/rx_flutter/rx_disposable.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+//
+// import 'AppLogger.dart';
+// import 'Constant.dart';
+//
+// ///with Get Api Client
+// class ApiClient extends GetConnect implements GetxService {
+//   late Future<String?> token = getToken();
+//   final String appBaseUrl;
+//   final AppLogger logger = AppLogger(); // Initialize the logger
+//
+//   late Map<String, String> _mainHeaders;
+//
+//   ApiClient({required this.appBaseUrl}) {
+//     baseUrl = appBaseUrl;
+//     // logger.logInfo('Current Base URL $baseUrl ');
+//     timeout = const Duration(seconds: 120);
+//     _mainHeaders = {
+//       'Accept': 'application/json',
+//       'Authorization': 'Bearer $token',
+//     };
+//   }
+//
+//   ///Get Method only url
+//   Future<Response> getData(String uri) async {
+//     try {
+//       logger.logInfo(
+//         'GET request to $appBaseUrl$uri with headers: $_mainHeaders',
+//       );
+//       Response response = await get(uri, headers: _mainHeaders);
+//       logger.logInfo('Response: ${response.bodyString}');
+//       return response;
+//     } catch (e) {
+//       logger.logError('Error in GET request to $uri', e);
+//       return Response(statusCode: 1, statusText: e.toString());
+//     }
+//   }
+//
+//   ///post Method url AND body
+//   Future<Response> postDataLogout(String uri) async {
+//     logger.logInfo('POST Logout request to $appBaseUrl$uri ');
+//     try {
+//       Response response = await post(uri, "");
+//       logger.logInfo('Response: ${response.bodyString}');
+//       return response;
+//     } catch (e) {
+//       logger.logError('Error in POST Logout request to $uri', e);
+//       return Response(statusText: e.toString(), statusCode: 1);
+//     }
+//   }
+//
+//   ///post Method url AND body
+//   Future<Response> postData(String uri, dynamic body) async {
+//     logger.logInfo('POST request to $appBaseUrl$uri with body: $body and ');
+//     try {
+//       Response response = await post(uri, body);
+//       logger.logInfo('Response: ${response.bodyString}');
+//       return response;
+//     } catch (e) {
+//       logger.logError('Error in POST request to $uri', e);
+//       return Response(statusText: e.toString(), statusCode: 1);
+//     }
+//   }
+//
+//   ///post Method url AND body ------ --------- Department
+//
+//   //delete
+//   Future<Response> deleteData(String uri) async {
+//     logger.logInfo(
+//       'DELETE request to $appBaseUrl$uri with headers: $_mainHeaders',
+//     );
+//     try {
+//       Response response = await delete(uri, headers: _mainHeaders);
+//       logger.logInfo('Response: ${response.bodyString}');
+//       return response;
+//     } catch (e) {
+//       logger.logError('Error in DELETE request to $uri', e);
+//       return Response(statusCode: 1, statusText: e.toString());
+//     }
+//   }
+//
+//   //Send data with file and data using form
+//   Future<Response> postDataWithFile(String uri, FormData formData) async {
+//     logger.logInfo('POST request with file to $uri with formData: $formData');
+//     try {
+//       Response response = await post(uri, formData);
+//       logger.logInfo('Response: ${response.bodyString}');
+//       return response;
+//     } catch (e) {
+//       logger.logError('Error in POST request with file to $appBaseUrl$uri', e);
+//       return Response(statusText: e.toString(), statusCode: 1);
+//     }
+//   }
+// }
+//
+// String? getToken() async {
+//   final SharedPreferences prefs = await SharedPreferences.getInstance();
+//   return prefs.getString("USER_TOKEN").toString();
+// }
+
+import 'package:get/get_connect/connect.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_disposable.dart';
+import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
+
+import 'AppLogger.dart';
+
+///with Get Api Client
+class ApiClient extends GetConnect implements GetxService {
+  final String appBaseUrl;
+  final AppLogger logger = AppLogger(); // Initialize the logger
+
+  ApiClient({required this.appBaseUrl}) {
+    baseUrl = appBaseUrl;
+    timeout = const Duration(seconds: 120);
+  }
+
+  /// 🔑 Always build headers fresh with latest token
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await getToken();
+    return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
+  }
+
+  ///Get Method only url
+  Future<Response> getData(String uri) async {
+    try {
+      final headers = await _getHeaders();
+      logger.logInfo('GET request to $appBaseUrl$uri with headers: $headers');
+
+      Response response = await get(uri, headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in GET request to $uri', e);
+      return Response(statusCode: 1, statusText: e.toString());
+    }
+  }
+
+  ///post Method url AND body
+  Future<Response> postDataLogout(String uri) async {
+    logger.logInfo('POST Logout request to $appBaseUrl$uri ');
+    try {
+      final headers = await _getHeaders();
+      Response response = await post(uri, "", headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in POST Logout request to $uri', e);
+      return Response(statusText: e.toString(), statusCode: 1);
+    }
+  }
+
+  ///post Method url AND body
+  Future<Response> postData(String uri, dynamic body) async {
+    try {
+      final headers = await _getHeaders();
+      logger.logInfo(
+        'POST request to $appBaseUrl$uri with body: $body and headers: $headers',
+      );
+      Response response = await post(uri, body, headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in POST request to $uri', e);
+      return Response(statusText: e.toString(), statusCode: 1);
+    }
+  }
+
+  //delete
+  Future<Response> deleteData(String uri) async {
+    try {
+      final headers = await _getHeaders();
+      logger.logInfo(
+        'DELETE request to $appBaseUrl$uri with headers: $headers',
+      );
+      Response response = await delete(uri, headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in DELETE request to $uri', e);
+      return Response(statusCode: 1, statusText: e.toString());
+    }
+  }
+
+  //Send data with file and data using form
+  Future<Response> postDataWithFile(String uri, FormData formData) async {
+    try {
+      final headers = await _getHeaders();
+      logger.logInfo(
+        'POST request with file to $uri with formData: $formData and headers: $headers',
+      );
+      Response response = await post(uri, formData, headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in POST request with file to $appBaseUrl$uri', e);
+      return Response(statusText: e.toString(), statusCode: 1);
+    }
+  }
+}
+
+/// 🔑 Fetch token from SharedPreferences
+Future<String?> getToken() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getString("USER_TOKEN");
+}
