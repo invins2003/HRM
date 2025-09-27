@@ -31,11 +31,7 @@ class _MainscreenState extends State<Mainscreen> {
     }
   }
 
-  final List<String> _screenTitles = [
-    'DashBoard',
-    'EmployeeList&Profile',
-    'Profile',
-  ];
+  final List<String> _screenTitles = ['DashBoard', 'EmployeeList', 'Profile'];
 
   Widget _buildOffstageNavigator(int index) {
     return Offstage(
@@ -109,7 +105,7 @@ class _MainscreenState extends State<Mainscreen> {
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'DashBoard'),
             BottomNavigationBarItem(
               icon: Icon(Icons.search),
-              label: 'EmployeeList&Profile',
+              label: 'EmployeeList',
             ),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],

@@ -386,7 +386,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
         children: [
           const SizedBox(height: 10),
 
-          /// 🔎 Search + Filter Row
+          /// Search + Filter Row
           Padding(
             padding: const EdgeInsets.only(left: 10, right: 10),
             child: Row(
@@ -433,8 +433,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-
-                /// Filter Button (future use)
                 Container(
                   height: 50,
                   width: 50,
@@ -454,8 +452,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
           ),
 
           const SizedBox(height: 10),
-
-          /// Employee List (with controller)
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {

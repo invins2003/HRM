@@ -55,7 +55,7 @@ class LogoutController extends GetxController {
         Get.snackbar("Success", "Logout Successfully");
 
         // Navigate to login
-        Get.offAll(() => Loginscreen());
+        Get.offAll(() => LoginScreen());
       } else {
         isloading.value = false;
         final errorModel = ErrorModel.fromJson(response.body);

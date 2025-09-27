@@ -32,9 +32,12 @@
 //   // //  Get.lazyPut(() => GpUserHomeRepo(apiClient: Get.find()));
 // }
 
+import 'package:erp_admin/module/DashBoard/Screens/DashBoardScreen.dart';
 import 'package:get/get.dart';
 
 import '../module/DashBoard/Controller/EmployeeListController.dart';
+import '../module/DashBoard/Controller/EmployeeListController.dart'
+    as Dashboardscreen;
 import '../module/DashBoard/Repo/EmployeeListRepo.dart';
 import '../module/EmployeeList&Profile/Controller/EmployeeListController/EmployeeListController.dart';
 import '../module/EmployeeList&Profile/Controller/EmployeeProfileController/EmployeeProfileController.dart';
@@ -53,14 +56,14 @@ Future<void> init() async {
   // / Controller
   Get.lazyPut(() => AuthController(authformRepo: Get.find()));
   Get.lazyPut(() => LogoutController(logoutRepo: Get.find()));
-  Get.lazyPut(() => EmployeeList(employeeListRepo: Get.find()));
+  Get.lazyPut(() => DashBoardEmployeeList(employeeListRepo: Get.find()));
   Get.lazyPut(() => EmployeeListController(employeeListRepo: Get.find()));
   Get.lazyPut(() => EmployeeProfileController(employeeProfileRepo: Get.find()));
 
   /// Repo
   Get.lazyPut(() => AuthRepo(apiClient: Get.find()));
   Get.lazyPut(() => LogoutRepo(apiClient: Get.find()));
-  Get.lazyPut(() => EmployeeRepo(apiClient: Get.find()));
+  Get.lazyPut(() => DashBoardEmployeeListRepo(apiClient: Get.find()));
   Get.lazyPut(() => EmployeeListRepo(apiClient: Get.find()));
   Get.lazyPut(() => EmployeeProfileRepo(apiClient: Get.find()));
 }

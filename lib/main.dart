@@ -206,7 +206,6 @@
 //   }
 // }
 
-
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -236,7 +235,7 @@ class MyApp extends StatelessWidget {
 
     // ✅ First time or logged out
     if (token == null || token.isEmpty) {
-      return Loginscreen();
+      return LoginScreen();
     }
 
     // ✅ If biometric was enabled
@@ -254,15 +253,15 @@ class MyApp extends StatelessWidget {
         if (authenticated) {
           return const Mainscreen();
         } else {
-          return Loginscreen(); // cancel → login manually
+          return LoginScreen(); // cancel → login manually
         }
       } catch (e) {
-        return Loginscreen(); // fallback
+        return LoginScreen(); // fallback
       }
     }
 
     // ✅ If biometric not enabled → always go to login
-    return Loginscreen();
+    return LoginScreen();
   }
 
   @override
@@ -281,13 +280,13 @@ class MyApp extends StatelessWidget {
               ),
             );
           } else {
-            return snapshot.data ?? Loginscreen();
+            return snapshot.data ?? LoginScreen();
           }
         },
       ),
       getPages: [
         GetPage(name: "/main", page: () => const Mainscreen()),
-        GetPage(name: "/login", page: () => Loginscreen()),
+        GetPage(name: "/login", page: () => LoginScreen()),
       ],
     );
   }
