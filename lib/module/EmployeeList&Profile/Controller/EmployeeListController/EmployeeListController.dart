@@ -51,7 +51,7 @@ class EmployeeListController extends GetxController {
   RxBool isLoading = false.obs;
   var employeelisttt = <Data>[].obs; // full list from API
   var filteredList = <Data>[].obs; // list after search
-  var errorMs = "".obs;
+  // var errorMs = "".obs;
 
   /// Fetch Employee List
   Future<void> listtController() async {
@@ -78,7 +78,7 @@ class EmployeeListController extends GetxController {
     }
   }
 
-  /// 🔎 Search Function
+  /// Search Function
   void filterEmployees(String query) {
     if (query.isEmpty) {
       filteredList.assignAll(employeelisttt); // reset to full list
@@ -92,5 +92,18 @@ class EmployeeListController extends GetxController {
         ),
       );
     }
+  }
+
+  /// Delete Employee
+  void deleteEmployee(Data emp) {
+    employeelisttt.remove(emp); // remove from list
+    Get.snackbar("Deleted", "${emp.name} removed successfully");
+    // TODO: call Delete API here if backend exists
+  }
+
+  /// Set Default Employee
+  void setDefaultEmployee(Data emp) {
+    Get.snackbar("Default", "${emp.name} set as default");
+    // TODO: call API if backend supports default employee
   }
 }

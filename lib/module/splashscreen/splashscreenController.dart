@@ -64,7 +64,7 @@ class SplashController extends GetxController {
     if (token != null && token.isNotEmpty) {
       _authenticate();
     } else {
-      Get.offAll(() => Loginscreen());
+      Get.offAll(() => LoginScreen());
     }
   }
 
@@ -73,7 +73,7 @@ class SplashController extends GetxController {
       bool canCheck = await auth.canCheckBiometrics;
       if (!canCheck) {
         Get.snackbar("Error", "Biometric not available");
-        Get.offAll(() => Loginscreen());
+        Get.offAll(() => LoginScreen());
         return;
       }
 
@@ -88,11 +88,11 @@ class SplashController extends GetxController {
       if (authenticated) {
         Get.offAll(() => Mainscreen());
       } else {
-        Get.offAll(() => Loginscreen());
+        Get.offAll(() => LoginScreen());
       }
     } catch (e) {
       Get.snackbar("Error", "Biometric failed: $e");
-      Get.offAll(() => Loginscreen());
+      Get.offAll(() => LoginScreen());
     }
   }
 }

@@ -157,8 +157,8 @@ class Dashboardscreen extends StatefulWidget {
 }
 
 class _DashboardscreenState extends State<Dashboardscreen> {
-  final EmployeeList controller = Get.put(
-    EmployeeList(employeeListRepo: Get.find()),
+  final controller = Get.put(
+    DashBoardEmployeeList(employeeListRepo: Get.find()),
   );
 
   @override

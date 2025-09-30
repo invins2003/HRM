@@ -5,9 +5,9 @@ import 'package:erp_admin/module/DashBoard/Repo/EmployeeListRepo.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 
-class EmployeeList extends GetxController {
-  EmployeeRepo employeeListRepo;
-  EmployeeList({required this.employeeListRepo});
+class DashBoardEmployeeList extends GetxController {
+  DashBoardEmployeeListRepo employeeListRepo;
+  DashBoardEmployeeList({required this.employeeListRepo});
 
   RxBool isLoading = false.obs;
   var employeelisttt = <Data>[].obs;
