@@ -1,4 +1,5 @@
 import 'package:erp_admin/module/Profile/Screens/ProfileScreen.dart';
+import 'package:erp_admin/module/expense/screens/expense_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../DashBoard/Screens/DashBoardScreen.dart';
@@ -31,7 +32,7 @@ class _MainscreenState extends State<Mainscreen> {
     }
   }
 
-  final List<String> _screenTitles = ['DashBoard', 'EmployeeList', 'Profile'];
+  final List<String> _screenTitles = ['DashBoard', 'EmployeeList','wallet', 'Profile'];
 
   Widget _buildOffstageNavigator(int index) {
     return Offstage(
@@ -48,8 +49,11 @@ class _MainscreenState extends State<Mainscreen> {
               page = EmployeeScreen();
               break;
             case 2:
-              page = ProfileScreen();
+              page = ExpenseScreen();
               break;
+            case 3:
+             page = ProfileScreen();
+             break;  
             default:
               page = Dashboardscreen();
           }
@@ -107,6 +111,7 @@ class _MainscreenState extends State<Mainscreen> {
               icon: Icon(Icons.search),
               label: 'EmployeeList',
             ),
+              BottomNavigationBarItem(icon: Icon(Icons.wallet_rounded),label: "Branch Wallet"),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
