@@ -8,4 +8,10 @@ class Constants {
   static const String BIOMETRICREGISTRATION = "/api/employees/biometric/";
 
   static const String EMPLOYEEATTENDENCE = "/api/attendance/attendance/verify/";
+
+  static const String EARLYLEAVING = "/api/attendance/early-leaving/";
+
+  static const String OVERTIME = "/api/attendance/overtime/";
+
+  static const String PRESENTEMPLOYEE = "/api/attendance";
 }

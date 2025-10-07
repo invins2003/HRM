@@ -1,5 +1,7 @@
+import 'package:erp_admin/Routs/AppRouts.dart';
 import 'package:erp_admin/common/faceattendence.dart';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
+import 'package:erp_admin/module/MainScreen/MainScreen.dart';
 import 'package:erp_admin/module/RegisterEmployee/controller/register_employee_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -61,12 +63,19 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
           widget.employee.employeeId!, capturedEmbeddings!);
 
       if (controller.success.value) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("✅ Biometric registered successfully"),
             backgroundColor: Colors.green,
           ),
         );
+
+        // 👇 Navigate to main screen after short delay
+        Future.delayed(const Duration(seconds: 1), () { 
+         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> Mainscreen()));
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -6,16 +6,16 @@ class EmployeeProfileModel {
 
   EmployeeProfileModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
-    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['success'] = this.success;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
+    final Map<String, dynamic> map = {};
+    map['success'] = success;
+    if (data != null) {
+      map['data'] = data!.toJson();
     }
-    return data;
+    return map;
   }
 }
 
@@ -30,7 +30,7 @@ class Data {
   String? email;
   String? password;
   String? employeeId;
-  Null? biometricEmpId;
+  List<List<double>>? biometricEmpId; // ✅ fixed
   int? branchId;
   int? departmentId;
   int? designationId;
@@ -42,9 +42,9 @@ class Data {
   String? bankIdentifierCode;
   String? branchLocation;
   String? taxPayerId;
-  Null? account;
-  Null? salaryType;
-  Null? salary;
+  String? account;
+  String? salaryType;
+  String? salary;
   bool? isActive;
   int? createdBy;
   String? createdAt;
@@ -101,81 +101,80 @@ class Data {
     email = json['email'];
     password = json['password'];
     employeeId = json['employee_id'];
-    biometricEmpId = json['biometric_emp_id'];
+
+    // ✅ handle biometric_emp_id as List<List<double>>
+    if (json['biometric_emp_id'] != null) {
+      biometricEmpId = (json['biometric_emp_id'] as List)
+          .map((e) => List<double>.from(e.map((x) => x.toDouble())))
+          .toList();
+    }
+
     branchId = json['branch_id'];
     departmentId = json['department_id'];
     designationId = json['designation_id'];
     companyDoj = json['company_doj'];
-    documents = json['documents'];
+    documents = json['documents']?.toString();
     accountHolderName = json['account_holder_name'];
     accountNumber = json['account_number'];
     bankName = json['bank_name'];
     bankIdentifierCode = json['bank_identifier_code'];
     branchLocation = json['branch_location'];
     taxPayerId = json['tax_payer_id'];
-    account = json['account'];
-    salaryType = json['salary_type'];
-    salary = json['salary'];
+    account = json['account']?.toString();
+    salaryType = json['salary_type']?.toString();
+    salary = json['salary']?.toString();
     isActive = json['is_active'];
     createdBy = json['created_by'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    user = json['user'] != null ? new User.fromJson(json['user']) : null;
-    branch = json['branch'] != null
-        ? new Branch.fromJson(json['branch'])
-        : null;
-    department = json['department'] != null
-        ? new Branch.fromJson(json['department'])
-        : null;
-    designation = json['designation'] != null
-        ? new Branch.fromJson(json['designation'])
-        : null;
+    user = json['user'] != null ? User.fromJson(json['user']) : null;
+    branch = json['branch'] != null ? Branch.fromJson(json['branch']) : null;
+    department =
+        json['department'] != null ? Branch.fromJson(json['department']) : null;
+    designation =
+        json['designation'] != null ? Branch.fromJson(json['designation']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['user_id'] = this.userId;
-    data['name'] = this.name;
-    data['dob'] = this.dob;
-    data['gender'] = this.gender;
-    data['phone'] = this.phone;
-    data['address'] = this.address;
-    data['email'] = this.email;
-    data['password'] = this.password;
-    data['employee_id'] = this.employeeId;
-    data['biometric_emp_id'] = this.biometricEmpId;
-    data['branch_id'] = this.branchId;
-    data['department_id'] = this.departmentId;
-    data['designation_id'] = this.designationId;
-    data['company_doj'] = this.companyDoj;
-    data['documents'] = this.documents;
-    data['account_holder_name'] = this.accountHolderName;
-    data['account_number'] = this.accountNumber;
-    data['bank_name'] = this.bankName;
-    data['bank_identifier_code'] = this.bankIdentifierCode;
-    data['branch_location'] = this.branchLocation;
-    data['tax_payer_id'] = this.taxPayerId;
-    data['account'] = this.account;
-    data['salary_type'] = this.salaryType;
-    data['salary'] = this.salary;
-    data['is_active'] = this.isActive;
-    data['created_by'] = this.createdBy;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
-    if (this.user != null) {
-      data['user'] = this.user!.toJson();
+    final Map<String, dynamic> map = {};
+    map['id'] = id;
+    map['user_id'] = userId;
+    map['name'] = name;
+    map['dob'] = dob;
+    map['gender'] = gender;
+    map['phone'] = phone;
+    map['address'] = address;
+    map['email'] = email;
+    map['password'] = password;
+    map['employee_id'] = employeeId;
+
+    if (biometricEmpId != null) {
+      map['biometric_emp_id'] = biometricEmpId;
     }
-    if (this.branch != null) {
-      data['branch'] = this.branch!.toJson();
-    }
-    if (this.department != null) {
-      data['department'] = this.department!.toJson();
-    }
-    if (this.designation != null) {
-      data['designation'] = this.designation!.toJson();
-    }
-    return data;
+
+    map['branch_id'] = branchId;
+    map['department_id'] = departmentId;
+    map['designation_id'] = designationId;
+    map['company_doj'] = companyDoj;
+    map['documents'] = documents;
+    map['account_holder_name'] = accountHolderName;
+    map['account_number'] = accountNumber;
+    map['bank_name'] = bankName;
+    map['bank_identifier_code'] = bankIdentifierCode;
+    map['branch_location'] = branchLocation;
+    map['tax_payer_id'] = taxPayerId;
+    map['account'] = account;
+    map['salary_type'] = salaryType;
+    map['salary'] = salary;
+    map['is_active'] = isActive;
+    map['created_by'] = createdBy;
+    map['created_at'] = createdAt;
+    map['updated_at'] = updatedAt;
+    if (user != null) map['user'] = user!.toJson();
+    if (branch != null) map['branch'] = branch!.toJson();
+    if (department != null) map['department'] = department!.toJson();
+    if (designation != null) map['designation'] = designation!.toJson();
+    return map;
   }
 }
 
@@ -193,11 +192,11 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    data['email'] = this.email;
-    return data;
+    final Map<String, dynamic> map = {};
+    map['id'] = id;
+    map['name'] = name;
+    map['email'] = email;
+    return map;
   }
 }
 
@@ -213,9 +212,9 @@ class Branch {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    return data;
+    final Map<String, dynamic> map = {};
+    map['id'] = id;
+    map['name'] = name;
+    return map;
   }
 }

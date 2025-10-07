@@ -1,3 +1,5 @@
+import 'package:erp_admin/module/EmployeeList&Profile/Model/earlyleaving_model.dart';
+import 'package:erp_admin/module/EmployeeList&Profile/Model/overtime_employee_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:get/get.dart';
@@ -10,4 +12,52 @@ class EmployeeListRepo extends GetxController implements GetxService {
     print("ApiClient.getData ---> ${Constants.EMPLOYEELIST}");
     return await apiClient.getData(Constants.EMPLOYEELIST);
   }
+
+   Future<EarlyLeavingModel> updateEarlyLeaving({
+  required String empId,
+  required String date,
+  required String earlyLeaving,
+  required String reason,
+}) async {
+  final body = {
+    "date": date,
+    "early_leaving": earlyLeaving,
+    "reason": reason,
+  };
+
+  final response = await apiClient.patchData(
+    "${Constants.EARLYLEAVING}$empId",
+    body,
+  );
+
+  if (response.statusCode == 200) {
+    return EarlyLeavingModel.fromJson(response.body);
+  } else {
+    throw Exception("Failed: ${response.body}");
+  }
+}
+
+Future<OverTimeModel> updateOverTime({
+  required String empId,
+  required String date,
+  required String overtime,
+  required String reason,
+}) async {
+  final body = {
+    "date": date,
+    "overtime": overtime,
+    "reason": reason,
+  };
+
+  final response = await apiClient.patchData(
+    "${Constants.OVERTIME}$empId",
+    body,
+  );
+
+  if (response.statusCode == 200) {
+    return OverTimeModel.fromJson(response.body);
+  } else {
+    throw Exception("Failed: ${response.body}");
+  }
+}
 }

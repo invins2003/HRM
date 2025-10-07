@@ -1,8 +1,9 @@
+import 'package:erp_admin/module/DashBoard/Model/present_employee_model.dart';
 import 'package:flutter/material.dart';
 import 'Model/EmployeesLIstModel.dart';
 
 class EmployeeListWidget extends StatelessWidget {
-  final List<Data> employeelist;
+  final List<AttendanceData> employeelist;
 
   const EmployeeListWidget({super.key, required this.employeelist});
 
@@ -14,7 +15,7 @@ class EmployeeListWidget extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.all(8.0),
           child: Text(
-            "Employee List",
+            "Employee Attendence List",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -32,19 +33,19 @@ class EmployeeListWidget extends StatelessWidget {
                 leading: CircleAvatar(
                   backgroundColor: Colors.green.shade400,
                   child: Text(
-                    employee.name != null && employee.name!.isNotEmpty
-                        ? employee.name![0].toUpperCase()
+                    employee.employee?.employeeId != null && employee.employee!.name!.isNotEmpty
+                        ? employee.employee!.name![0].toUpperCase()
                         : "?",
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
-                title: Text(employee.name ?? "No Name"),
-                subtitle: Text("ID: ${employee.employeeId ?? "N/A"}"),
+                title: Text(employee.employee!.name ?? "No Name"),
+                subtitle: Text("ID: ${employee.employee?.employeeId ?? "N/A"}"),
                 trailing: Text(
-                  employee.email ?? "No Email",
+                  employee.clockIn ?? "No Email",
                   style: TextStyle(
                     color:
-                        (employee.email != null && employee.email!.isNotEmpty)
+                        (employee.clockIn != null && employee.clockIn!.isNotEmpty)
                         ? Colors.green
                         : Colors.red,
                     fontWeight: FontWeight.bold,
@@ -52,7 +53,7 @@ class EmployeeListWidget extends StatelessWidget {
                 ),
                 onTap: () {
                   debugPrint(
-                    "Tapped on ${employee.name} (${employee.employeeId})",
+                    "Tapped on ${employee.employee?.employeeId} (${employee.employee?.employeeId})",
                   );
                 },
               );

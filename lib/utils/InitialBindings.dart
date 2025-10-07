@@ -1,36 +1,4 @@
-// import 'package:erp_admin/module/Logout/Repo/LogoutRepo.dart';
-// import 'package:get/get.dart';
-//
-// import '../module/Logout/Controller/LogoutController.dart';
-// import '../module/auth/Controller/AuthCotroller.dart';
-// import '../module/auth/Repo/AuthRepo.dart';
-// import 'ApiClient.dart';
-// import 'Constant.dart';
-//
-// Future<void> init() async {
-//   // Connectivity connectivity = Connectivity();
-//   // Get.put(NetworkInfo(connectivity));
-//
-//   Get.lazyPut(() => ApiClient(appBaseUrl: Constants.BASEURL));
-//   //
-//   // ///Controller
-//
-//   Get.lazyPut(() => AuthController(authformRepo: Get.find()));
-//   Get.lazyPut(() => LogoutController(logoutRepo: Get.find()));
-//
-//   // Get.lazyPut(() => HomeController(homeRepo: Get.find()));
-//   // Get.lazyPut(() => StartMatchController(startMatchRepository: Get.find()));
-//   // //  Get.lazyPut(() => GpUserAuthController(gpUserAuthRepo:Get.find()));
-//   // //  Get.lazyPut(() => GpUserHomeController(gpUserHomeRepo:Get.find(),));
-//   //
-//   // ///Repo
-//   //
-//   Get.lazyPut(() => AuthRepo(apiClient: Get.find()));
-//   Get.lazyPut(() => LogoutRepo(apiClient: Get.find()));
-//   // Get.lazyPut(() => HomeRepo(apiClient: Get.find()));
-//   // Get.lazyPut(() => StartMatchRepository(apiClient: Get.find()));
-//   // //  Get.lazyPut(() => GpUserHomeRepo(apiClient: Get.find()));
-// }
+
 
 import 'package:erp_admin/module/DashBoard/Screens/DashBoardScreen.dart';
 import 'package:get/get.dart';

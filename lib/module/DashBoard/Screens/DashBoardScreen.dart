@@ -25,6 +25,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     super.initState();
     Future.delayed(Duration.zero, () {
       controller.listtController();
+      controller.presentListtController();
     });
   }
 
@@ -89,12 +90,12 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                 return Center(child: Text(controller.errorMs.value));
               }
 
-              if (controller.employeelisttt.isEmpty) {
+              if (controller.attendanceList.isEmpty) {
                 return const Center(child: Text("No employees found"));
               }
 
               return EmployeeListWidget(
-                employeelist: controller.employeelisttt,
+                employeelist: controller.attendanceList,
               );
             }),
           ),

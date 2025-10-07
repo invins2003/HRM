@@ -1,4 +1,5 @@
 import 'package:erp_admin/module/DashBoard/Model/attendence_request_model.dart';
+import 'package:erp_admin/module/EmployeeList&Profile/Model/earlyleaving_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:flutter/material.dart';
@@ -17,17 +18,11 @@ class DashBoardEmployeeListRepo extends GetxController implements GetxService {
 
     debugPrint("ApiClient.getData ---> ${Constants.EMPLOYEEATTENDENCE}");
     return await apiClient.postData("${Constants.EMPLOYEEATTENDENCE}$empId", request.toJson());
-  //   final url = Uri.parse('$baseUrl/api/attendance/attendance/verify');
-  //   final response = await http.post(
-  //     url,
-  //     headers: {"Content-Type": "application/json"},
-  //     body: jsonEncode(request.toJson()),
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     return AttendanceResponse.fromJson(jsonDecode(response.body));
-  //   } else {
-  //     throw Exception("Server error: ${response.statusCode}");
-  //   }
   }
+Future<Response> presentEmployeeListRepo() async {
+    debugPrint("ApiClient.getData ---> ${Constants.PRESENTEMPLOYEE}");
+    return await apiClient.getData(Constants.PRESENTEMPLOYEE);
+  }
+
+
 }
