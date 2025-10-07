@@ -1,6 +1,10 @@
+import 'dart:math';
+import 'package:camera/camera.dart';
+import 'package:erp_admin/common/faceattendence.dart';
+import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../RegisterEmployee/RegisterEmployee.dart';
+import '../../RegisterEmployee/screens/RegisterEmployee.dart';
 import '../Controller/EmployeeListController.dart';
 import '../EmployeeListWidget.dart';
 
@@ -32,7 +36,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         children: [
           const SizedBox(height: 10),
 
-          /// Register Employee Button
+          // Register Employee Button
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: SizedBox(
@@ -47,8 +51,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                   elevation: 3,
                 ),
                 onPressed: () {
-                  Get.to(RegisterEmployeeScreen());
-                  debugPrint("Register employee clicked");
+                  _showEmployeeSearchDialog(context);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -65,21 +68,17 @@ class _DashboardscreenState extends State<Dashboardscreen> {
             ),
           ),
 
-          /// Check-in & Check-out Row
+          // Check-in Row
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              spacing: 10,
-              children: [
-                _buildActionTile("Check-in"),
-                _buildActionTile("Check-out"),
-              ],
+              children: [_buildActionTile("Check-in")],
             ),
           ),
 
           const SizedBox(height: 10),
 
-          /// Employee List Section (API data show)
+          // Employee List Section
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
@@ -104,14 +103,15 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     );
   }
 
-  /// Custom tile builder for Check-in / Check-out
   Widget _buildActionTile(String label) {
     return Expanded(
       child: Card(
         elevation: 3,
         child: InkWell(
           onTap: () {
-            debugPrint("$label tapped");
+            if (label == "Check-in") {
+              _showEmployeeAttendanceDialog(context);
+            }
           },
           child: Container(
             height: 50,
@@ -139,5 +139,274 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         ),
       ),
     );
+  }
+
+  void _showEmployeeSearchDialog(BuildContext context) {
+    final searchController = TextEditingController();
+    List<Data> filteredList = controller.employeelisttt;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text("Select the Employee"),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: "Enter employee name...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        filteredList = controller.employeelisttt
+                            .where((emp) => (emp.name ?? "")
+                                .toLowerCase()
+                                .contains(value.toLowerCase()))
+                            .toList();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filteredList.isEmpty
+                        ? const Center(child: Text("No employee found"))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filteredList.length,
+                            itemBuilder: (context, index) {
+                              final employee = filteredList[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.green,
+                                  child: Text(
+                                    employee.name!.isNotEmpty
+                                        ? employee.name![0].toUpperCase()
+                                        : "?",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                title: Text(employee.name ?? "No Name"),
+                                subtitle:
+                                    Text("ID: ${employee.employeeId ?? 'N/A'}"),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  if (employee.biometricEmpId != null &&
+                                      employee.biometricEmpId!.isNotEmpty) {
+                                    Get.snackbar(
+                                      "Already Registered",
+                                      "${employee.name} is already registered for face recognition.",
+                                      backgroundColor: Colors.redAccent,
+                                      colorText: Colors.white,
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                  } else {
+                                    Get.to(() => RegisterEmployeeScreen(
+                                          employee: employee,
+                                        ));
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _showEmployeeAttendanceDialog(BuildContext context) async {
+    final searchController = TextEditingController();
+    List<Data> filteredList = controller.employeelisttt;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text("Select Employee"),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: "Enter employee name...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        filteredList = controller.employeelisttt
+                            .where((emp) => (emp.name ?? "")
+                                .toLowerCase()
+                                .contains(value.toLowerCase()))
+                            .toList();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filteredList.isEmpty
+                        ? const Center(child: Text("No employee found"))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filteredList.length,
+                            itemBuilder: (context, index) {
+                              final employee = filteredList[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.green,
+                                  child: Text(
+                                    employee.name!.isNotEmpty
+                                        ? employee.name![0].toUpperCase()
+                                        : "?",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                title: Text(employee.name ?? "No Name"),
+                                subtitle:
+                                    Text("ID: ${employee.employeeId ?? 'N/A'}"),
+                                onTap: () async {
+                                  Navigator.pop(context);
+                                  final cameras = await availableCameras();
+                                  final firstCamera = cameras.first;
+
+                                  final liveEmbeddings =
+                                      await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FaceProcessingScreen(
+                                        camera: firstCamera,
+                                        maxCaptures: 1,
+                                      ),
+                                    ),
+                                  );
+
+                                  if (liveEmbeddings != null &&
+                                      liveEmbeddings.isNotEmpty) {
+                                    _checkFaceMatch(
+                                        employee, liveEmbeddings.first);
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _checkFaceMatch(Data employee, List<double> liveEmbedding) async {
+  final stored = employee.biometricEmpId;
+
+  if (stored == null || stored.isEmpty) {
+    Get.snackbar(
+      "Not Registered",
+      "${employee.name} has no registered face ❌",
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    return;
+  }
+
+  try {
+    // Convert stored embeddings safely
+    final storedEmbeddings = stored
+        .map<List<double>>(
+            (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+        .toList();
+
+    bool matched = false;
+    for (var s in storedEmbeddings) {
+      if (_cosineSimilarity(liveEmbedding, s) >= 0.6) {
+        matched = true;
+        break;
+      }
+    }
+
+    if (matched) {
+      // ✅ Local face match success
+      Get.snackbar(
+        "Face Matched",
+        "${employee.name} face matched ✅",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      // 🔄 Call API via controller
+      await controller.verifyAttendance(liveEmbedding, employee.employeeId.toString());
+
+    } else {
+      Get.snackbar(
+        "Check-in Failed",
+        "${employee.name} face did not match ❌",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  } catch (e, st) {
+    debugPrint("Error processing embeddings: $e\n$st");
+    Get.snackbar(
+      "Error",
+      "Could not process face embeddings",
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+}
+
+  double _cosineSimilarity(List<double> a, List<double> b) {
+    assert(a.length == b.length);
+    double dot = 0.0, normA = 0.0, normB = 0.0;
+    for (int i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    return dot / (sqrt(normA) * sqrt(normB));
   }
 }

@@ -9,7 +9,7 @@ class ExpenseScreen extends StatefulWidget {
 
 class _ExpenseScreenState extends State<ExpenseScreen>
     with SingleTickerProviderStateMixin {
-  double totalAvailable = 10000.0; // initial amount
+  double totalAvailable = 100000.0; // initial amount
   final List<Map<String, dynamic>> expenseUsed = [];
   final List<Map<String, dynamic>> expenseRequests = [];
 

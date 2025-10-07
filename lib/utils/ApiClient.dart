@@ -198,6 +198,22 @@ class ApiClient extends GetConnect implements GetxService {
       return Response(statusText: e.toString(), statusCode: 1);
     }
   }
+
+
+   Future<Response> patchData(String uri, dynamic body) async {
+    try {
+      final headers = await _getHeaders();
+      logger.logInfo(
+        'PATCH request to $appBaseUrl$uri with body: $body and headers: $headers',
+      );
+      Response response = await patch(uri, body, headers: headers);
+      logger.logInfo('Response: ${response.bodyString}');
+      return response;
+    } catch (e) {
+      logger.logError('Error in PATCH request to $uri', e);
+      return Response(statusText: e.toString(), statusCode: 1);
+    }
+  }
 }
 
 /// 🔑 Fetch token from SharedPreferences

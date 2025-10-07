@@ -5,4 +5,7 @@ class Constants {
   static const String LOGOUT = "/api/auth/logout";
   static const String EMPLOYEELIST = "/api/employees";
   static const String EMPLOYEEPROFILE = "/api/employees/";
+  static const String BIOMETRICREGISTRATION = "/api/employees/biometric/";
+
+  static const String EMPLOYEEATTENDENCE = "/api/attendance/attendance/verify/";
 }
