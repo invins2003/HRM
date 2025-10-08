@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:google_fonts/google_fonts.dart'; // ✅ Google Fonts
 import 'module/auth/screens/signin.dart';
 import 'module/MainScreen/MainScreen.dart';
 
@@ -62,19 +63,22 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'HRM',
       theme: ThemeData(
-        primarySwatch: Colors.green, // ✅ green shades
-        scaffoldBackgroundColor: Colors.white, // ✅ clean white background
-        appBarTheme: const AppBarTheme(
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Colors.white,
+        textTheme: GoogleFonts.robotoTextTheme(  // ✅ Apply Poppins font
+          Theme.of(context).textTheme,
+        ),
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           elevation: 2,
           centerTitle: true,
-          titleTextStyle: TextStyle(
+          titleTextStyle: GoogleFonts.roboto(   // ✅ Use Google Font for AppBar
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -83,12 +87,13 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: const TextStyle(fontSize: 16),
+            textStyle: GoogleFonts.roboto(fontSize: 16), // ✅ Button font
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: Colors.green,
+            textStyle: GoogleFonts.roboto(), // ✅ TextButton font
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -106,6 +111,21 @@ class MyApp extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.green, width: 2),
+          ),
+          hintStyle: GoogleFonts.roboto(), // ✅ Input hint text font
+        ),
+        datePickerTheme: DatePickerThemeData(
+          backgroundColor: Colors.white,
+          headerBackgroundColor: Colors.green,
+          headerForegroundColor: Colors.white,
+          dayForegroundColor: WidgetStateProperty.all(Colors.black87),
+          dayOverlayColor: WidgetStateProperty.all(Colors.green.withOpacity(0.15)),
+          todayForegroundColor: WidgetStateProperty.all(Colors.white),
+          todayBackgroundColor: WidgetStateProperty.all(Colors.green),
+          yearForegroundColor: WidgetStateProperty.all(Colors.black87),
+          yearOverlayColor: WidgetStateProperty.all(Colors.green.withOpacity(0.15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),

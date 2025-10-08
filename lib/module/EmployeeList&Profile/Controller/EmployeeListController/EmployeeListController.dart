@@ -156,11 +156,29 @@ Future<void> markAttendanceController({
   }
 }
   /// Delete Employee
-  void deleteEmployee(Data emp) {
-    employeelisttt.remove(emp); // remove from list
-    Get.snackbar("Deleted", "${emp.name} removed successfully");
-    // TODO: call Delete API here if backend exists
+Future<void> deleteEmployee(Data emp) async {
+  try {
+    isLoading.value = true;
+
+    final response = await employeeListRepo.deleteEmployeeRepo(emp.employeeId!);
+
+    if (response.statusCode == 200) {
+      employeelisttt.remove(emp); // remove from list
+      filteredList.remove(emp); // also remove from filtered list
+      Get.snackbar("Deleted", "${emp.name} removed successfully");
+      log("Deleted Employee ID: ${emp.employeeId}");
+    } else {
+      Get.snackbar("Failed", response.body["message"] ?? "Delete failed");
+      log("Delete failed: ${response.body}");
+    }
+  } catch (e) {
+    Get.snackbar("Error", "Failed to delete employee.");
+    log("Error in deleteEmployee: $e");
+  } finally {
+    isLoading.value = false;
   }
+}
+
 
   /// Set Default Employee
   void setDefaultEmployee(Data emp) {

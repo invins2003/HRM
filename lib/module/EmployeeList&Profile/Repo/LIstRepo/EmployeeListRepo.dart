@@ -3,6 +3,7 @@ import 'package:erp_admin/module/EmployeeList&Profile/Model/manual_present_model
 import 'package:erp_admin/module/EmployeeList&Profile/Model/overtime_employee_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class EmployeeListRepo extends GetxController implements GetxService {
@@ -84,5 +85,10 @@ Future<OverTimeModel> updateOverTime({
     } else {
       throw Exception(response.body["message"] ?? "Unknown error");
     }
+  }
+
+  Future<Response> deleteEmployeeRepo( String empId) async {
+    debugPrint("ApiClient.getData ---> ${Constants.DELETEEMPLOYEEATTENDENCE}/${empId}");
+    return await apiClient.deleteData("${Constants.DELETEEMPLOYEE}/${empId}");
   }
 }

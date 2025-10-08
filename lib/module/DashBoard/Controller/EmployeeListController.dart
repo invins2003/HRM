@@ -68,6 +68,7 @@ class DashBoardEmployeeList extends GetxController {
                 name: empAttendance.employee!.name,
                 employeeId: empAttendance.employee!.employeeId,
                 email: null,
+                employeeType: empAttendance.employee!.employeeType
               ));
             }
           }
@@ -116,6 +117,46 @@ class DashBoardEmployeeList extends GetxController {
       );
     }
   }
+
+
+  Future<void> deleteEmployeeAttendance(String attendanceId) async {
+  try {
+    isLoading.value = true;
+    final response = await employeeListRepo.deleteEmployeeAttendenceRepo(attendanceId);
+
+    if (response.statusCode == 200) {
+      Get.snackbar(
+        "Deleted ✅",
+        "Attendance record removed successfully",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      // Remove from local list without reloading API
+      attendanceList.removeWhere((item) => item.id.toString() == attendanceId);
+    } else {
+      Get.snackbar(
+        "Delete Failed ❌",
+        response.body["message"] ?? "Something went wrong",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  } catch (e) {
+    Get.snackbar(
+      "Error",
+      "Failed to delete attendance: $e",
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 
   String checkBiometricStatus(int empId) {
     return biometricRegistered.containsKey(empId)

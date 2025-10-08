@@ -20,131 +20,146 @@ class ListWidget extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: ListView.separated(
-            itemCount: employeelist.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final employee = employeelist[index];
-
-              return ListTile(
-                /// Show first letter as avatar
-                leading: CircleAvatar(
-                  backgroundColor: Colors.green.shade400,
-                  child: Text(
-                    employee.name != null && employee.name!.isNotEmpty
-                        ? employee.name![0].toUpperCase()
-                        : "?",
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-
-                title: Text(employee.name ?? "No Name"),
-
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("ID : ${employee.employeeId ?? "N/A"}"),
-                    Text(
-                      employee.email ?? "N/A",
-                      style: TextStyle(
-                        color: (employee.email != null &&
-                                employee.email!.isNotEmpty)
-                            ? Colors.green
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-                /// Popup Menu (5 Options)
-                trailing: PopupMenuButton<String>(
-                  surfaceTintColor: Colors.white,
-                  color: Colors.white,
-                  onSelected: (value) {
-                    if (value == "view") {
-                      if (employee.employeeId != null) {
-                        Get.to(
-                          () => EmployeeProfileScreen(
-                            employeeId:
-                                int.tryParse(employee.employeeId.toString()) ??
-                                    0,
-                          ),
-                        );
-                      }
-                    } else if (value == "delete") {
-                      controller.deleteEmployee(employee);
-                    } else if (value == "default") {
-                      controller.setDefaultEmployee(employee);
-                    } else if (value == "early leave") {
-                      _showEarlyLeaveDialog(context, controller, employee);
-                    } else if (value == "Overtime") {
-                      _showOverTimeDialog(context, controller, employee);
-                    } else if (value == "manage_attendance") {
-                      _showManageAttendanceDialog(context, controller, employee);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: "view",
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text("Employee Profile"),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: "Overtime",
-                      child: Row(
-                        children: [
-                          Icon(Icons.work_history, color: Colors.green),
-                          SizedBox(width: 8),
-                          Text("Overtime"),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: "early leave",
-                      child: Row(
-                        children: [
-                          Icon(Icons.directions_walk_rounded, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text("Early Leave"),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: "delete",
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text("Delete Employee"),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: "manage_attendance",
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_calendar, color: Colors.orange),
-                          SizedBox(width: 8),
-                          Text("Manage Attendance"),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
+          child: RefreshIndicator(
+            color: Colors.green,
+            backgroundColor: Colors.white,
+            onRefresh: () async {
+              // Call API to refresh the list
+              await controller.listtController();
             },
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(), // ✅ ensures scroll even if list < screen
+              itemCount: employeelist.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final employee = employeelist[index];
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.green.shade400,
+                    child: Text(
+                      employee.name != null && employee.name!.isNotEmpty
+                          ? employee.name![0].toUpperCase()
+                          : "?",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(employee.name ?? "No Name"),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("ID : ${employee.employeeId ?? "N/A"}"),
+                      Text(
+                        employee.email ?? "N/A",
+                        style: TextStyle(
+                          color: (employee.email != null &&
+                                  employee.email!.isNotEmpty)
+                              ? Colors.green
+                              : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    surfaceTintColor: Colors.white,
+                    color: Colors.white,
+                    onSelected: (value) {
+                      if (value == "view") {
+                        if (employee.employeeId != null) {
+                          Get.to(
+                            () => EmployeeProfileScreen(
+                              employeeId:
+                                  int.tryParse(employee.employeeId.toString()) ?? 0,
+                            ),
+                          );
+                        }
+                      } else if (value == "delete") {
+                        // Confirm before deleting
+                        Get.defaultDialog(
+                          title: "Delete Employee",
+                          middleText: "Are you sure you want to delete ${employee.name}?",
+                          textCancel: "Cancel",
+                          textConfirm: "Delete",
+                          confirmTextColor: Colors.white,
+                          onConfirm: () {
+                            controller.deleteEmployee(employee);
+                            Get.back();
+                          },
+                        );
+                      } else if (value == "default") {
+                        controller.setDefaultEmployee(employee);
+                      } else if (value == "early leave") {
+                        _showEarlyLeaveDialog(context, controller, employee);
+                      } else if (value == "Overtime") {
+                        _showOverTimeDialog(context, controller, employee);
+                      } else if (value == "manage_attendance") {
+                        _showManageAttendanceDialog(context, controller, employee);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: "view",
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text("Employee Profile"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: "Overtime",
+                        child: Row(
+                          children: [
+                            Icon(Icons.work_history, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text("Overtime"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: "early leave",
+                        child: Row(
+                          children: [
+                            Icon(Icons.directions_walk_rounded, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text("Early Leave"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: "delete",
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text("Delete Employee"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: "manage_attendance",
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_calendar, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Manage Attendance"),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
     );
   }
 }
+
 
 /// Show Dialog for Early Leave (Date + Time)
 void _showEarlyLeaveDialog(

@@ -1,6 +1,7 @@
-import 'package:erp_admin/module/DashBoard/Model/present_employee_model.dart';
+import 'package:erp_admin/module/DashBoard/Controller/EmployeeListController.dart';
 import 'package:flutter/material.dart';
-import 'Model/EmployeesLIstModel.dart';
+import 'package:erp_admin/module/DashBoard/Model/present_employee_model.dart';
+import 'package:get/get.dart';
 
 class EmployeeListWidget extends StatelessWidget {
   final List<AttendanceData> employeelist;
@@ -9,13 +10,15 @@ class EmployeeListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DashBoardEmployeeList>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Padding(
           padding: EdgeInsets.all(8.0),
           child: Text(
-            "Employee Attendence List",
+            "Employee Attendance List",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -26,36 +29,75 @@ class EmployeeListWidget extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             itemCount: employeelist.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 2),
+            separatorBuilder: (context, index) => const SizedBox(height: 1),
             itemBuilder: (context, index) {
               final employee = employeelist[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.green.shade400,
-                  child: Text(
-                    employee.employee?.employeeId != null && employee.employee!.name!.isNotEmpty
-                        ? employee.employee!.name![0].toUpperCase()
-                        : "?",
-                    style: const TextStyle(color: Colors.white),
-                  ),
+              final status = employee.status?.toLowerCase() ?? "absent";
+              final isPresent = status == "present";
+
+              return Dismissible(
+                key: Key(employee.id.toString()),
+                direction: DismissDirection.horizontal, // both L→R and R→L
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                title: Text(employee.employee!.name ?? "No Name"),
-                subtitle: Text("ID: ${employee.employee?.employeeId ?? "N/A"}"),
-                trailing: Text(
-                  employee.clockIn ?? "No Email",
-                  style: TextStyle(
-                    color:
-                        (employee.clockIn != null && employee.clockIn!.isNotEmpty)
-                        ? Colors.green
-                        : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
+                secondaryBackground: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onTap: () {
-                  debugPrint(
-                    "Tapped on ${employee.employee?.employeeId} (${employee.employee?.employeeId})",
+                confirmDismiss: (direction) async {
+                  return await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: Colors.white,
+                      title: const Text("Confirm Delete"),
+                      content: Text(
+                        "Do you want to delete attendance for ${employee.employee?.name ?? "this employee"}?",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
                   );
                 },
+                onDismissed: (direction) {
+                  controller.deleteEmployeeAttendance(employee.id.toString());
+                },
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: isPresent ? Colors.green : Colors.red,
+                    child: Text(
+                      (employee.employee?.name ?? "?")
+                          .substring(0, 1)
+                          .toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(employee.employee?.name ?? "No Name"),
+                  subtitle: Text(
+                    "ID: ${employee.employee?.employeeId ?? "N/A"} | Type: ${employee.employee?.employeeType ?? "N/A"}",
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                  trailing: Text(
+                    employee.status ?? "Absent",
+                    style: TextStyle(
+                      color: isPresent ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               );
             },
           ),

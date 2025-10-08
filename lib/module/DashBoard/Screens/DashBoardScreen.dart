@@ -41,36 +41,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           const SizedBox(height: 10),
 
           // Register Employee Button
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              height: 50,
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 3,
-                ),
-                onPressed: () {
-                  _showEmployeeSearchDialog(context);
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.person_add, color: Colors.white, size: 25),
-                    SizedBox(width: 5),
-                    Text(
-                      "Register an Employee",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _buildRegisterEmployeeButton(),
 
         
           // Check-in Row
@@ -82,44 +53,59 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           ),
 
           const SizedBox(height: 10),
-// ✅ Attendance Date Display + Change Option
+/// ✅ Attendance Date Display + Change Option
 Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Text(
-        DateFormat('yyyy-MM-dd').format(selectedDate),
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
-      ),
-      IconButton(
-        icon: const Icon(Icons.calendar_today, color: Colors.green),
-        onPressed: () async {
-          final pickedDate = await showDatePicker(
-            context: context,
-            initialDate: selectedDate,
-            firstDate: DateTime(2025),
-            lastDate: DateTime(2100),
-          );
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  child: InkWell(
+    onTap: () async {
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2025),
+        lastDate: DateTime(2100),
+      );
 
-          if (pickedDate != null && pickedDate != selectedDate) {
-            setState(() {
-              selectedDate = pickedDate;
-            });
+      if (pickedDate != null && pickedDate != selectedDate) {
+        setState(() {
+          selectedDate = pickedDate;
+        });
 
-            // 🔄 Refresh attendance list when date changes
-            await controller.listtController();
-            await controller.presentListtController(pickedDate);
-          }
-        },
+        // 🔄 Refresh attendance list when date changes
+        await controller.listtController();
+        await controller.presentListtController(pickedDate);
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.4)),
       ),
-    ],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                DateFormat('EEEE, MMM d, yyyy').format(selectedDate),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const Icon(Icons.edit_calendar, color: Colors.green),
+        ],
+      ),
+    ),
   ),
 ),
+
 
           // Employee List Section
           Expanded(
@@ -153,44 +139,115 @@ Padding(
       ),
     );
   }
-
-  Widget _buildActionTile(String label) {
-    return Expanded(
-      child: Card(
-        elevation: 3,
-        child: InkWell(
-          onTap: () {
-            if (label == "Check-in") {
-              _showEmployeeAttendanceDialog(context);
-            }
-          },
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(label, style: const TextStyle(color: Colors.white)),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white12,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  height: 35,
-                  width: 35,
-                  child: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                ),
-              ],
-            ),
+  Widget _buildRegisterEmployeeButton() {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    child: GestureDetector(
+      onTap: () {
+        _showEmployeeSearchDialog(context);
+      },
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF43A047), Color(0xFF1B5E20)], // Green shades
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_add, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              "Register an Employee",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+  Widget _buildActionTile(String label) {
+  return Expanded(
+    child: GestureDetector(
+      onTap: () {
+        if (label == "Check-in") {
+          _showEmployeeAttendanceDialog(context);
+        }
+      },
+      child: Container(
+        height: 80,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified, color: Colors.white, size: 30),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 
   void _showEmployeeSearchDialog(BuildContext context) {
     final searchController = TextEditingController();

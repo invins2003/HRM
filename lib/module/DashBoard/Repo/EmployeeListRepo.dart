@@ -1,5 +1,4 @@
 import 'package:erp_admin/module/DashBoard/Model/attendence_request_model.dart';
-import 'package:erp_admin/module/EmployeeList&Profile/Model/earlyleaving_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +23,11 @@ Future<Response> presentEmployeeListRepo(DateTime date) async {
   final formattedDate = DateFormat("yyyy-MM-dd").format(date);
     debugPrint("ApiClient.getData ---> ${Constants.PRESENTEMPLOYEE}/date?date=${formattedDate}");
     return await apiClient.getData("${Constants.PRESENTEMPLOYEE}/date?date=${formattedDate}");
+  }
+
+  Future<Response> deleteEmployeeAttendenceRepo( String id) async {
+    debugPrint("ApiClient.getData ---> ${Constants.DELETEEMPLOYEEATTENDENCE}/${id}");
+    return await apiClient.deleteData("${Constants.DELETEEMPLOYEEATTENDENCE}/${id}");
   }
 
 

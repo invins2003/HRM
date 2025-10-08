@@ -16,4 +16,8 @@ class Constants {
   static const String PRESENTEMPLOYEE = "/api/attendance";
 
   static const String TOGGLEATTENDENCE = "/api/attendance/status/";
+
+  static const String DELETEEMPLOYEEATTENDENCE = "/api/attendance";
+  static const String DELETEEMPLOYEE = "/api/employees";
+
 }
