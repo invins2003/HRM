@@ -47,6 +47,8 @@ class Data {
   String? bankIdentifierCode;
   String? branchLocation;
   String? taxPayerId;
+  String? employeeType;
+  String? status;
   Null account;
   Null salaryType;
   Null salary;
@@ -93,10 +95,14 @@ class Data {
     this.branch,
     this.department,
     this.designation,
+    this.employeeType,
+    this.status
   });
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    status = json["status"];
+    employeeType = json[""];
     userId = json['user_id'];
     name = json['name'];
     dob = json['dob'];

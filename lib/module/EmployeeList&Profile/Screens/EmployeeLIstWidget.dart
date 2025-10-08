@@ -57,7 +57,7 @@ class ListWidget extends StatelessWidget {
                   ],
                 ),
 
-                /// Popup Menu (4 Options)
+                /// Popup Menu (5 Options)
                 trailing: PopupMenuButton<String>(
                   surfaceTintColor: Colors.white,
                   color: Colors.white,
@@ -80,6 +80,8 @@ class ListWidget extends StatelessWidget {
                       _showEarlyLeaveDialog(context, controller, employee);
                     } else if (value == "Overtime") {
                       _showOverTimeDialog(context, controller, employee);
+                    } else if (value == "manage_attendance") {
+                      _showManageAttendanceDialog(context, controller, employee);
                     }
                   },
                   itemBuilder: (context) => [
@@ -120,6 +122,16 @@ class ListWidget extends StatelessWidget {
                           Icon(Icons.delete, color: Colors.red),
                           SizedBox(width: 8),
                           Text("Delete Employee"),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: "manage_attendance",
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_calendar, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Text("Manage Attendance"),
                         ],
                       ),
                     ),
@@ -212,7 +224,7 @@ void _showEarlyLeaveDialog(
       if (employee.employeeId != null) {
         controller.updateEarlyLeavingController(
           empId: employee.employeeId.toString(),
-          date: dateController.text.trim(),       // yyyy-MM-dd
+          date: dateController.text.trim(), // yyyy-MM-dd
           earlyLeaving: timeController.text.trim(), // HH:mm:ss ✅
           reason: reasonController.text.trim(),
         );
@@ -301,7 +313,7 @@ void _showOverTimeDialog(
       if (employee.employeeId != null) {
         controller.updateOverTimeController(
           empId: employee.employeeId.toString(),
-          date: dateController2.text.trim(),       // yyyy-MM-dd
+          date: dateController2.text.trim(), // yyyy-MM-dd
           overtime: timeController2.text.trim(), // HH:mm:ss ✅
           reason: reasonController2.text.trim(),
         );
@@ -309,6 +321,114 @@ void _showOverTimeDialog(
         Get.snackbar("Error", "Employee ID not available");
       }
       Get.back(); // close dialog
+    },
+  );
+}
+
+/// Manage Attendance Dialog (Date + Time + Present/Absent)
+/// Manage Attendance Dialog (Date + Time + Present/Absent)
+void _showManageAttendanceDialog(
+    BuildContext context, EmployeeListController controller, Data employee) {
+  final dateController = TextEditingController();
+  final timeController = TextEditingController();
+  final statusController = ValueNotifier<String>("Present");
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDate: DateTime.now(),
+    );
+    if (picked != null) {
+      dateController.text = DateFormat("yyyy-MM-dd").format(picked);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
+      timeController.text = DateFormat("HH:mm:ss").format(dt);
+    }
+  }
+
+  Get.defaultDialog(
+    title: "Manage Attendance - ${employee.name}",
+    content: Column(
+      children: [
+        TextField(
+          controller: dateController,
+          readOnly: true,
+          decoration: InputDecoration(
+            labelText: "Date (yyyy-MM-dd)",
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.calendar_today),
+              onPressed: _pickDate,
+            ),
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ValueListenableBuilder<String>(
+          valueListenable: statusController,
+          builder: (context, value, _) {
+            return Column(
+              children: [
+                if (value == "Present") // show time only if present
+                  TextField(
+                    controller: timeController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: "Time (HH:mm:ss)",
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.access_time),
+                        onPressed: _pickTime,
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Status:"),
+                    DropdownButton<String>(
+                      value: value,
+                      items: const [
+                        DropdownMenuItem(value: "Present", child: Text("Present")),
+                        DropdownMenuItem(value: "Absent", child: Text("Absent")),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) statusController.value = val;
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+    textCancel: "Cancel",
+    textConfirm: "Submit",
+    confirmTextColor: Colors.white,
+    onConfirm: () {
+      if (employee.employeeId != null) {
+        controller.markAttendanceController(
+          empId: employee.employeeId.toString(),
+          date: dateController.text.trim(),
+          timestamp: statusController.value == "Present" ? "${dateController.text.trim()} ${timeController.text.trim()}" : null,
+          status: statusController.value,
+        );
+      } else {
+        Get.snackbar("Error", "Employee ID not available");
+      }
+      Get.back();
     },
   );
 }

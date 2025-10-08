@@ -1,4 +1,3 @@
-
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -62,6 +61,54 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'HRM',
+      theme: ThemeData(
+        primarySwatch: Colors.green, // ✅ green shades
+        scaffoldBackgroundColor: Colors.white, // ✅ clean white background
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(fontSize: 16),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.green,
+          ),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: Colors.green,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.green),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.green, width: 2),
+          ),
+        ),
+      ),
       home: FutureBuilder<Widget>(
         future: _checkLoginStatus(),
         builder: (context, snapshot) {

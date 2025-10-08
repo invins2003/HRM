@@ -14,4 +14,6 @@ class Constants {
   static const String OVERTIME = "/api/attendance/overtime/";
 
   static const String PRESENTEMPLOYEE = "/api/attendance";
+
+  static const String TOGGLEATTENDENCE = "/api/attendance/status/";
 }

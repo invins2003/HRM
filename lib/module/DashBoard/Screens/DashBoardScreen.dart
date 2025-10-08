@@ -4,6 +4,7 @@ import 'package:erp_admin/common/faceattendence.dart';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart'; // ✅ for formatting date
 import '../../RegisterEmployee/screens/RegisterEmployee.dart';
 import '../Controller/EmployeeListController.dart';
 import '../EmployeeListWidget.dart';
@@ -20,12 +21,14 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     DashBoardEmployeeList(employeeListRepo: Get.find()),
   );
 
+  DateTime selectedDate = DateTime.now(); // ✅ default today
+
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () {
       controller.listtController();
-      controller.presentListtController();
+      controller.presentListtController(selectedDate);
     });
   }
 
@@ -69,6 +72,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
             ),
           ),
 
+        
           // Check-in Row
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -78,6 +82,44 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           ),
 
           const SizedBox(height: 10),
+// ✅ Attendance Date Display + Change Option
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Text(
+        DateFormat('yyyy-MM-dd').format(selectedDate),
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.calendar_today, color: Colors.green),
+        onPressed: () async {
+          final pickedDate = await showDatePicker(
+            context: context,
+            initialDate: selectedDate,
+            firstDate: DateTime(2025),
+            lastDate: DateTime(2100),
+          );
+
+          if (pickedDate != null && pickedDate != selectedDate) {
+            setState(() {
+              selectedDate = pickedDate;
+            });
+
+            // 🔄 Refresh attendance list when date changes
+            await controller.listtController();
+            await controller.presentListtController(pickedDate);
+          }
+        },
+      ),
+    ],
+  ),
+),
 
           // Employee List Section
           Expanded(
@@ -94,9 +136,17 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                 return const Center(child: Text("No employees found"));
               }
 
-              return EmployeeListWidget(
-                employeelist: controller.attendanceList,
-              );
+              return RefreshIndicator(
+                color: Colors.green,
+                backgroundColor: Colors.white,
+      onRefresh: () async {
+        await controller.listtController();
+        await controller.presentListtController(selectedDate);
+      },
+      child: EmployeeListWidget(
+        employeelist: controller.attendanceList,
+      ),
+    );
             }),
           ),
         ],
@@ -338,67 +388,67 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   }
 
   void _checkFaceMatch(Data employee, List<double> liveEmbedding) async {
-  final stored = employee.biometricEmpId;
+    final stored = employee.biometricEmpId;
 
-  if (stored == null || stored.isEmpty) {
-    Get.snackbar(
-      "Not Registered",
-      "${employee.name} has no registered face ❌",
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    return;
-  }
-
-  try {
-    // Convert stored embeddings safely
-    final storedEmbeddings = stored
-        .map<List<double>>(
-            (e) => (e as List).map<double>((v) => v.toDouble()).toList())
-        .toList();
-
-    bool matched = false;
-    for (var s in storedEmbeddings) {
-      if (_cosineSimilarity(liveEmbedding, s) >= 0.6) {
-        matched = true;
-        break;
-      }
-    }
-
-    if (matched) {
-      // ✅ Local face match success
+    if (stored == null || stored.isEmpty) {
       Get.snackbar(
-        "Face Matched",
-        "${employee.name} face matched ✅",
-        backgroundColor: Colors.green,
+        "Not Registered",
+        "${employee.name} has no registered face ❌",
+        backgroundColor: Colors.redAccent,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
+      return;
+    }
 
-      // 🔄 Call API via controller
-      await controller.verifyAttendance(liveEmbedding, employee.employeeId.toString());
+    try {
+      // Convert stored embeddings safely
+      final storedEmbeddings = stored
+          .map<List<double>>(
+              (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+          .toList();
 
-    } else {
+      bool matched = false;
+      for (var s in storedEmbeddings) {
+        if (_cosineSimilarity(liveEmbedding, s) >= 0.6) {
+          matched = true;
+          break;
+        }
+      }
+
+      if (matched) {
+        // ✅ Local face match success
+        Get.snackbar(
+          "Face Matched",
+          "${employee.name} face matched ✅",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // 🔄 Call API via controller
+        await controller.verifyAttendance(
+            liveEmbedding, employee.employeeId.toString());
+      } else {
+        Get.snackbar(
+          "Check-in Failed",
+          "${employee.name} face did not match ❌",
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e, st) {
+      debugPrint("Error processing embeddings: $e\n$st");
       Get.snackbar(
-        "Check-in Failed",
-        "${employee.name} face did not match ❌",
+        "Error",
+        "Could not process face embeddings",
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  } catch (e, st) {
-    debugPrint("Error processing embeddings: $e\n$st");
-    Get.snackbar(
-      "Error",
-      "Could not process face embeddings",
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
   }
-}
 
   double _cosineSimilarity(List<double> a, List<double> b) {
     assert(a.length == b.length);

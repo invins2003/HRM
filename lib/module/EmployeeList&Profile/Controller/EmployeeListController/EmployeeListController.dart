@@ -2,6 +2,7 @@
 
 import 'dart:developer';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
+import 'package:erp_admin/module/EmployeeList&Profile/Model/manual_present_model.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import '../../Repo/LIstRepo/EmployeeListRepo.dart';
@@ -80,7 +81,7 @@ class EmployeeListController extends GetxController {
       log("Update failed: ${response}");
     }
   } catch (e) {
-    Get.snackbar("Error", e.toString());
+    Get.snackbar("Error", "Failed to update early leaving please try after sometime.");
     log("Error in updateEarlyLeavingController ---> $e");
   } finally {
     isLoading.value = false;
@@ -112,8 +113,44 @@ class EmployeeListController extends GetxController {
       log("Update failed: ${response}");
     }
   } catch (e) {
-    Get.snackbar("Error", e.toString());
+    Get.snackbar("Error", "Failed to update early leaving!! please try after sometime.");
     log("Error in updateOverTimeController ---> $e");
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+
+Future<void> markAttendanceController({
+  required String empId,
+  required String date,
+  required String status, // "Present" or "Absent"
+  String? timestamp, // optional, required for Present
+}) async {
+  try {
+    isLoading.value = true;
+
+    final request = AttendanceStatusRequest(
+      date: date,
+      status: status,
+      timestamp: timestamp,
+    );
+
+    final response = await employeeListRepo.markAttendance(
+      empId: empId,
+      request: request,
+    );
+
+    if (response.success == true) {
+      Get.snackbar("Success", response.message);
+      log("Attendance Updated: $response");
+    } else {
+      Get.snackbar("Failed", response.message);
+      log("Attendance update failed: $response");
+    }
+  } catch (e) {
+    Get.snackbar("Error", "Failed to mark attendance.");
+    log("Error in markAttendanceController: $e");
   } finally {
     isLoading.value = false;
   }
@@ -130,4 +167,5 @@ class EmployeeListController extends GetxController {
     Get.snackbar("Default", "${emp.name} set as default");
     // TODO: call API if backend supports default employee
   }
+
 }

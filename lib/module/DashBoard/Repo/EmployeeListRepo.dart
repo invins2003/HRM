@@ -4,6 +4,7 @@ import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class DashBoardEmployeeListRepo extends GetxController implements GetxService {
   ApiClient apiClient;
@@ -19,9 +20,10 @@ class DashBoardEmployeeListRepo extends GetxController implements GetxService {
     debugPrint("ApiClient.getData ---> ${Constants.EMPLOYEEATTENDENCE}");
     return await apiClient.postData("${Constants.EMPLOYEEATTENDENCE}$empId", request.toJson());
   }
-Future<Response> presentEmployeeListRepo() async {
-    debugPrint("ApiClient.getData ---> ${Constants.PRESENTEMPLOYEE}");
-    return await apiClient.getData(Constants.PRESENTEMPLOYEE);
+Future<Response> presentEmployeeListRepo(DateTime date) async {
+  final formattedDate = DateFormat("yyyy-MM-dd").format(date);
+    debugPrint("ApiClient.getData ---> ${Constants.PRESENTEMPLOYEE}/date?date=${formattedDate}");
+    return await apiClient.getData("${Constants.PRESENTEMPLOYEE}/date?date=${formattedDate}");
   }
 
 
