@@ -46,8 +46,10 @@ class DashBoardEmployeeList extends GetxController {
   }
 
   Future<void> presentListtController(DateTime date) async {
+    
     try {
       isLoading.value = true;
+      attendanceList.clear();
       Response response = await employeeListRepo.presentEmployeeListRepo(date);
 
       if (response.statusCode == 200) {

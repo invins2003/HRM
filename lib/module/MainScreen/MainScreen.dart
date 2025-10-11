@@ -1,5 +1,5 @@
-import 'package:erp_admin/module/Profile/Screens/ProfileScreen.dart';
 import 'package:erp_admin/module/expense/screens/expense_screen.dart';
+import 'package:erp_admin/module/profile/screens/myprofile_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../DashBoard/Screens/DashBoardScreen.dart';
@@ -16,6 +16,7 @@ class _MainscreenState extends State<Mainscreen> {
   int _selectedIndex = 0;
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
@@ -96,8 +97,8 @@ class _MainscreenState extends State<Mainscreen> {
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
-          children: List.generate(3, (index) => _buildOffstageNavigator(index)),
-        ),
+  children: List.generate(_navigatorKeys.length, (index) => _buildOffstageNavigator(index)),
+),
         bottomNavigationBar: BottomNavigationBar(
           backgroundColor: Colors.green,
           currentIndex: _selectedIndex,

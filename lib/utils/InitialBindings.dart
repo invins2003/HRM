@@ -2,6 +2,8 @@
 
 import 'package:erp_admin/module/DashBoard/Screens/DashBoardScreen.dart';
 import 'package:erp_admin/module/expense/controller/expense_controller.dart';
+import 'package:erp_admin/module/profile/controller/profile_controller.dart';
+import 'package:erp_admin/module/profile/repo/profile_repo.dart';
 import 'package:get/get.dart';
 
 import '../module/DashBoard/Controller/EmployeeListController.dart';
@@ -28,6 +30,7 @@ Future<void> init() async {
   Get.lazyPut(() => DashBoardEmployeeList(employeeListRepo: Get.find()));
   Get.lazyPut(() => EmployeeListController(employeeListRepo: Get.find()));
   Get.lazyPut(() => EmployeeProfileController(employeeProfileRepo: Get.find()));
+  Get.lazyPut(()=>  ProfileController());
 
   /// Repo
   Get.lazyPut(() => AuthRepo(apiClient: Get.find()));
@@ -35,4 +38,5 @@ Future<void> init() async {
   Get.lazyPut(() => DashBoardEmployeeListRepo(apiClient: Get.find()));
   Get.lazyPut(() => EmployeeListRepo(apiClient: Get.find()));
   Get.lazyPut(() => EmployeeProfileRepo(apiClient: Get.find()));
+  Get.lazyPut(()=>ProfileRepo());
 }

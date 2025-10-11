@@ -108,23 +108,79 @@ Padding(
 
 
           // Employee List Section
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
+         Expanded(
+  child: Obx(() {
+    if (controller.isLoading.value) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-              if (controller.errorMs.isNotEmpty) {
-                return Center(child: Text(controller.errorMs.value));
-              }
+    if (controller.errorMs.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              controller.errorMs.value,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await controller.listtController();
+                await controller.presentListtController(selectedDate);
+              },
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text("Retry"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-              if (controller.attendanceList.isEmpty) {
-                return const Center(child: Text("No employees found"));
-              }
+    if (controller.attendanceList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.people_outline, size: 60, color: Colors.grey),
+            const SizedBox(height: 10),
+            const Text(
+              "No employees found",
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await controller.listtController();
+                await controller.presentListtController(selectedDate);
+              },
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text("Retry"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-              return RefreshIndicator(
-                color: Colors.green,
-                backgroundColor: Colors.white,
+    return RefreshIndicator(
+      color: Colors.green,
+      backgroundColor: Colors.white,
       onRefresh: () async {
         await controller.listtController();
         await controller.presentListtController(selectedDate);
@@ -133,8 +189,9 @@ Padding(
         employeelist: controller.attendanceList,
       ),
     );
-            }),
-          ),
+  }),
+)
+
         ],
       ),
     );
@@ -250,111 +307,123 @@ Padding(
 
 
   void _showEmployeeSearchDialog(BuildContext context) {
-    final searchController = TextEditingController();
-    List<Data> filteredList = controller.employeelisttt;
+  final searchController = TextEditingController();
+  
+  // Filter only active employees initially
+  List<Data> filteredList = controller.employeelisttt
+      .where((emp) => emp.isActive == true)
+      .toList();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text("Select the Employee"),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: "Enter employee name...",
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text("Select the Employee"),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: "Enter employee name...",
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        filteredList = controller.employeelisttt
-                            .where((emp) => (emp.name ?? "")
-                                .toLowerCase()
-                                .contains(value.toLowerCase()))
-                            .toList();
-                      });
-                    },
                   ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: filteredList.isEmpty
-                        ? const Center(child: Text("No employee found"))
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: filteredList.length,
-                            itemBuilder: (context, index) {
-                              final employee = filteredList[index];
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.green,
-                                  child: Text(
-                                    employee.name!.isNotEmpty
-                                        ? employee.name![0].toUpperCase()
-                                        : "?",
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      filteredList = controller.employeelisttt
+                          .where((emp) =>
+                              emp.isActive == true && // ✅ Only active employees
+                              (emp.name ?? "")
+                                  .toLowerCase()
+                                  .contains(value.toLowerCase()))
+                          .toList();
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: filteredList.isEmpty
+                      ? const Center(child: Text("No active employee found"))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: filteredList.length,
+                          itemBuilder: (context, index) {
+                            final employee = filteredList[index];
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.green,
+                                child: Text(
+                                  employee.name!.isNotEmpty
+                                      ? employee.name![0].toUpperCase()
+                                      : "?",
+                                  style: const TextStyle(color: Colors.white),
                                 ),
-                                title: Text(employee.name ?? "No Name"),
-                                subtitle:
-                                    Text("ID: ${employee.employeeId ?? 'N/A'}"),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  if (employee.biometricEmpId != null &&
-                                      employee.biometricEmpId!.isNotEmpty) {
-                                    Get.snackbar(
-                                      "Already Registered",
-                                      "${employee.name} is already registered for face recognition.",
-                                      backgroundColor: Colors.redAccent,
-                                      colorText: Colors.white,
-                                      snackPosition: SnackPosition.BOTTOM,
-                                    );
-                                  } else {
-                                    Get.to(() => RegisterEmployeeScreen(
-                                          employee: employee,
-                                        ));
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
+                              ),
+                              title: Text(employee.name ?? "No Name"),
+                              subtitle:
+                                  Text("ID: ${employee.employeeId ?? 'N/A'}"),
+                              onTap: () {
+                                Navigator.pop(context);
+                                if (employee.biometricEmpId != null &&
+                                    employee.biometricEmpId!.isNotEmpty) {
+                                  Get.snackbar(
+                                    "Already Registered",
+                                    "${employee.name} is already registered for face recognition.",
+                                    backgroundColor: Colors.redAccent,
+                                    colorText: Colors.white,
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                } else {
+                                  Get.to(() => RegisterEmployeeScreen(
+                                        employee: employee,
+                                      ));
+                                }
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
-          );
-        });
-      },
-    );
-  }
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        );
+      });
+    },
+  );
+}
+
 
   void _showEmployeeAttendanceDialog(BuildContext context) async {
-    final searchController = TextEditingController();
-    List<Data> filteredList = controller.employeelisttt;
+  final searchController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
+  // ✅ Show only active employees initially
+  List<Data> filteredList = controller.employeelisttt
+      .where((emp) => emp.isActive == true)
+      .toList();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
           return AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text("Select Employee"),
             content: SizedBox(
               width: double.maxFinite,
@@ -373,10 +442,13 @@ Padding(
                     ),
                     onChanged: (value) {
                       setState(() {
+                        // ✅ Filter both active employees + name search
                         filteredList = controller.employeelisttt
-                            .where((emp) => (emp.name ?? "")
-                                .toLowerCase()
-                                .contains(value.toLowerCase()))
+                            .where((emp) =>
+                                emp.isActive == true &&
+                                (emp.name ?? "")
+                                    .toLowerCase()
+                                    .contains(value.toLowerCase()))
                             .toList();
                       });
                     },
@@ -384,7 +456,9 @@ Padding(
                   const SizedBox(height: 12),
                   Expanded(
                     child: filteredList.isEmpty
-                        ? const Center(child: Text("No employee found"))
+                        ? const Center(
+                            child: Text("No active employee found"),
+                          )
                         : ListView.builder(
                             shrinkWrap: true,
                             itemCount: filteredList.length,
@@ -397,19 +471,22 @@ Padding(
                                     employee.name!.isNotEmpty
                                         ? employee.name![0].toUpperCase()
                                         : "?",
-                                    style: const TextStyle(color: Colors.white),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                                 title: Text(employee.name ?? "No Name"),
-                                subtitle:
-                                    Text("ID: ${employee.employeeId ?? 'N/A'}"),
+                                subtitle: Text(
+                                  "ID: ${employee.employeeId ?? 'N/A'}",
+                                ),
                                 onTap: () async {
                                   Navigator.pop(context);
+
                                   final cameras = await availableCameras();
                                   final firstCamera = cameras.first;
 
-                                  final liveEmbeddings =
-                                      await Navigator.push(
+                                  final liveEmbeddings = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => FaceProcessingScreen(
@@ -422,7 +499,9 @@ Padding(
                                   if (liveEmbeddings != null &&
                                       liveEmbeddings.isNotEmpty) {
                                     _checkFaceMatch(
-                                        employee, liveEmbeddings.first);
+                                      employee,
+                                      liveEmbeddings.first,
+                                    );
                                   }
                                 },
                               );
@@ -439,10 +518,12 @@ Padding(
               ),
             ],
           );
-        });
-      },
-    );
-  }
+        },
+      );
+    },
+  );
+}
+
 
   void _checkFaceMatch(Data employee, List<double> liveEmbedding) async {
     final stored = employee.biometricEmpId;
@@ -486,6 +567,7 @@ Padding(
         // 🔄 Call API via controller
         await controller.verifyAttendance(
             liveEmbedding, employee.employeeId.toString());
+        await controller.presentListtController(selectedDate);
       } else {
         Get.snackbar(
           "Check-in Failed",

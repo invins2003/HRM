@@ -1,6 +1,6 @@
 import 'package:erp_admin/module/MainScreen/MainScreen.dart';
-import 'package:erp_admin/module/Profile/Screens/ProfileScreen.dart';
 import 'package:erp_admin/module/auth/screens/signin.dart';
+import 'package:erp_admin/module/profile/screens/myprofile_screen.dart';
 import 'package:get/get.dart';
 
 import '../module/DashBoard/Screens/DashBoardScreen.dart';
