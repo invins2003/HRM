@@ -113,6 +113,21 @@ class ApiClient extends GetConnect implements GetxService {
       return Response(statusText: e.toString(), statusCode: 1);
     }
   }
+
+  Future<Response> putData(String uri, dynamic body) async {
+  try {
+    final headers = await _getHeaders();
+    logger.logInfo(
+      'PUT request to $appBaseUrl$uri with body: $body and headers: $headers',
+    );
+    Response response = await put(uri, body, headers: headers);
+    logger.logInfo('Response: ${response.bodyString}');
+    return response;
+  } catch (e) {
+    logger.logError('Error in PUT request to $uri', e);
+    return Response(statusCode: 1, statusText: e.toString());
+  }
+}
 }
 
 /// 🔑 Fetch token from SharedPreferences

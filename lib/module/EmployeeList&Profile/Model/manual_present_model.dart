@@ -2,12 +2,14 @@
 class AttendanceStatusRequest {
   String date;
   String status;
-  String? timestamp; // optional for Absent
+  String? timestamp; 
+  String? reason;// optional for Absent
 
   AttendanceStatusRequest({
     required this.date,
     required this.status,
     this.timestamp,
+    this.reason
   });
 
   Map<String, dynamic> toJson() {
@@ -18,6 +20,9 @@ class AttendanceStatusRequest {
     if (timestamp != null && timestamp!.isNotEmpty) {
       map["timestamp"] = timestamp!;
     }
+    if (reason != null && reason!.isNotEmpty) {
+      map["reason"] = reason!;
+    }
     return map;
   }
 
@@ -26,6 +31,7 @@ class AttendanceStatusRequest {
       date: json['date'] ?? "",
       status: json['status'] ?? "",
       timestamp: json['timestamp'],
+      reason: json['reason'],
     );
   }
 }

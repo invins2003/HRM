@@ -69,6 +69,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                             decoration: const InputDecoration(
                               hintText: "Search Employee",
                               border: InputBorder.none,
+                              
                               isCollapsed: true,
                               contentPadding: EdgeInsets.zero,
                             ),
