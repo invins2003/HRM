@@ -1,14 +1,25 @@
+import 'package:erp_admin/module/expense/model/expense_category.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_admin/module/expense/model/all_expense_model.dart'; // Your model
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseDetailsScreen extends StatelessWidget {
   final Expense expense;
+  final RxList<ExpenseCategory> categoryList;
 
-  const ExpenseDetailsScreen({super.key, required this.expense});
+  const ExpenseDetailsScreen({super.key, required this.expense,required this.categoryList});
 
   @override
   Widget build(BuildContext context) {
+
+    final categoryName = categoryList
+    .firstWhere(
+      (cat) => cat.id == expense.categoryId,
+      orElse: () =>ExpenseCategory(id: 0, name: "not Available", createdBy: 1, isDeleted: false, createdAt: "1", updatedAt: "1"),
+    )
+    .name;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -24,7 +35,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
           children: [
             _buildHeaderCard(),
             const SizedBox(height: 24),
-            _buildDetailsCard(),
+            _buildDetailsCard(categoryName),
             const SizedBox(height: 24),
           ],
         ),
@@ -139,7 +150,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
   }
 
   /// Builds the card containing all the expense details.
-  Widget _buildDetailsCard() {
+  Widget _buildDetailsCard(String categoryName) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
 
     return Container(
@@ -156,6 +167,12 @@ class ExpenseDetailsScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _detailRow(
+            icon: Icons.category,
+            title: "Category",
+            value: categoryName,
+          ),
+          _divider(),
           _detailRow(
             icon: Icons.description_outlined,
             title: "Description",

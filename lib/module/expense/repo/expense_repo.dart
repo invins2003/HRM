@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:erp_admin/module/expense/model/all_expense_model.dart';
+import 'package:erp_admin/module/expense/model/expense_category.dart';
 import 'package:erp_admin/module/expense/model/fund_request_model.dart';
 import 'package:erp_admin/module/expense/model/request_fund_list_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
@@ -11,7 +12,29 @@ import '../Model/expense_model.dart';
 class ExpenseRepo {
   final ApiClient apiClient= ApiClient(appBaseUrl: Constants.BASEURL);
 
+
+
+  Future<List<ExpenseCategory>> getExpenseCategories() async {
+    try {
+      final response = await apiClient.getData("/api/expense-category");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = response.body;
+
+        if (jsonData['success'] == true) {
+          final List<dynamic> list = jsonData['data'];
+          return list.map((e) => ExpenseCategory.fromJson(e)).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching expense categories: $e");
+      return [];
+    }
+  }
+
   Future<ExpenseModel?> createExpense({
+    required int categoryId,
     required String description,
     required double amount,
     required double taxRate,
@@ -20,6 +43,7 @@ class ExpenseRepo {
   }) async {
     try {
       final formData = FormData({
+        "category_id": categoryId,
         "description": description,
         "amount": amount,
         "tax_rate": taxRate,
@@ -32,7 +56,7 @@ class ExpenseRepo {
       });
 
       final response = await apiClient.postDataWithFile(
-        "/api/expense", // 🔧 change endpoint if needed
+        Constants.CREATEEXPENSE, // 🔧 change endpoint if needed
         formData,
       );
 
@@ -53,7 +77,7 @@ class ExpenseRepo {
 
    Future<ExpenseResponse> fetchExpenses() async {
     try {
-      final response = await apiClient.getData("/api/expense");
+      final response = await apiClient.getData(Constants.GETEXPENSE);
 
       if (response.statusCode == 200) {
         return ExpenseResponse.fromJson(response.body);
@@ -69,7 +93,7 @@ class ExpenseRepo {
 
    Future<double?> fetchLatestBalance() async {
   try {
-    final response = await apiClient.getData("/api/branch-wallets");
+    final response = await apiClient.getData(Constants.GETBALANCE);
 
     if (response.statusCode == 200) {
       // If ApiClient returns decoded JSON, don't decode again
@@ -106,7 +130,7 @@ Future<FundRequestModel?> createFundRequest({
         "reason": reason,
       };
 
-      final response = await apiClient.postData("/api/fund-request", body);
+      final response = await apiClient.postData(Constants.FUNDREQUEST, body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // If ApiClient returns decoded JSON
@@ -125,7 +149,7 @@ Future<FundRequestModel?> createFundRequest({
 
   Future<FundRequestListModel> fetchMyFundRequests() async {
   try {
-    final response = await apiClient.getData("/api/fund-request/my");
+    final response = await apiClient.getData(Constants.MYFUNDREQUEST);
 
     if (response.statusCode == 200) {
       return FundRequestListModel.fromJson(response.body);
@@ -137,11 +161,4 @@ Future<FundRequestModel?> createFundRequest({
     return FundRequestListModel(success: false, data: []);
   }
 }
-
-
-// termination
-
-
-
-  
 }

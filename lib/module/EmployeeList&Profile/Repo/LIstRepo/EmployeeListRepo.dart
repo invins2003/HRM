@@ -128,14 +128,14 @@ Future<Response> updateLeave({
   required String leaveId,
   required Map<String, dynamic> body,
 }) async {
-  debugPrint("ApiClient.putData ---> ${Constants.CREATEEMPLOYEELEAVE}/$leaveId");
-  return await apiClient.putData("${Constants.CREATEEMPLOYEELEAVE}/$leaveId", body);
+  debugPrint("ApiClient.putData ---> ${Constants.DELETEEMPLOYEELEAVE}/$leaveId");
+  return await apiClient.putData("${Constants.DELETEEMPLOYEELEAVE}/$leaveId", body);
 }
 
 
 
  Future<List<TerminationType>> getTerminationTypes() async {
-    final response = await apiClient.getData("/api/termination-types");
+    final response = await apiClient.getData(Constants.EMPLOYEETERMINATIONTYPE);
 
     if (response.statusCode == 200) {
       final jsonData = response.body;
@@ -152,20 +152,21 @@ Future<Response> updateLeave({
   }
 
   Future<TerminationResponse> createTermination({
+  required bool isblacklisted,
   required int employeeId,
   required String terminationDate,
   required int terminationType,
   required String description,
 }) async {
   final body = {
+    "is_black_List": isblacklisted,
     "employee_id": employeeId,
-    // "notice_date": currentDate,
     "termination_date": terminationDate,
     "termination_type": terminationType,
     "description": description,
   };
 
-  final response = await apiClient.postData("/api/terminations", body);
+  final response = await apiClient.postData(Constants.CREATEEMPLOYEETERMINATION, body);
 
   if (response.statusCode == 200 || response.statusCode == 201) {
     return TerminationResponse.fromJson(response.body);
@@ -184,12 +185,11 @@ Future<ResignationResponse> createResignation({
 }) async {
   final body = {
     "employee_id": employeeId,
-    // "notice_date": currentDate,
     "resignation_date": resignationDate,
     "description": description,
   };
 
-  final response = await apiClient.postData("/api/resignations", body);
+  final response = await apiClient.postData(Constants.CREATEEMPLOYEERESIGNATION, body);
 
   if (response.statusCode == 200 || response.statusCode == 201) {
     return ResignationResponse.fromJson(response.body);

@@ -78,28 +78,30 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                             ),
                           );
                         }
-                      } else if (value == "delete") {
-                        Get.defaultDialog(
-                          title: "Delete Employee",
-                          titleStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          middleText:
-                              "Are you sure you want to delete ${employee.name}?",
-                          backgroundColor: Colors.white,
-                          titlePadding: const EdgeInsets.all(12),
-                          contentPadding: const EdgeInsets.all(12),
-                          radius: 12,
-                          textCancel: "Cancel",
-                          textConfirm: "Delete",
-                          confirmTextColor: Colors.white,
-                          buttonColor: Colors.green,
-                          onConfirm: () {
-                            Get.back();
-                          },
-                        );
-                      } else if (value == "leave") {
+                      } 
+                      // else if (value == "delete") {
+                      //   Get.defaultDialog(
+                      //     title: "Delete Employee",
+                      //     titleStyle: const TextStyle(
+                      //       color: Colors.white,
+                      //       fontWeight: FontWeight.bold,
+                      //     ),
+                      //     middleText:
+                      //         "Are you sure you want to delete ${employee.name}?",
+                      //     backgroundColor: Colors.white,
+                      //     titlePadding: const EdgeInsets.all(12),
+                      //     contentPadding: const EdgeInsets.all(12),
+                      //     radius: 12,
+                      //     textCancel: "Cancel",
+                      //     textConfirm: "Delete",
+                      //     confirmTextColor: Colors.white,
+                      //     buttonColor: Colors.green,
+                      //     onConfirm: () {
+                      //       Get.back();
+                      //     },
+                      //   );
+                      // } 
+                      else if (value == "leave") {
                         if (employee.employeeId != null) {
                           Get.to(
                             () => EmployeeLeavesScreen(
@@ -329,29 +331,16 @@ void _showTerminationDialog(
   EmployeeListController controller,
   Data employee,
 ) async {
-  // Controllers
   final terminationDateController = TextEditingController();
   final descriptionController = TextEditingController();
-  final selectedType = ValueNotifier<int?>(null);
+  RxInt selectedType = 0.obs; // make reactive
+  RxBool? isBlacklisted = false.obs; // default false
 
-  Future<void> _pickTerminationDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      initialDate: DateTime.now(),
-    );
-    if (picked != null) {
-      terminationDateController.text = DateFormat("yyyy-MM-dd").format(picked);
-    }
-  }
-
-  // Fetch termination types from API if not already
+  // Ensure types are fetched
   if (controller.terminationTypes.isEmpty) {
-    await controller.fetchTerminationTypes(); // <-- Add this method in your controller
+    await controller.fetchTerminationTypes();
   }
 
-  // Show dialog
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -369,38 +358,67 @@ void _showTerminationDialog(
                 labelText: "Termination Date",
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calendar_today),
-                  onPressed: _pickTerminationDate,
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                      initialDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      terminationDateController.text =
+                          DateFormat("yyyy-MM-dd").format(picked);
+                    }
+                  },
                 ),
                 border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
-            // Reactive Dropdown
-            ValueListenableBuilder<int?>(
-              valueListenable: selectedType,
-              builder: (context, value, _) {
-                return Obx(() {
-                  if (controller.terminationTypes.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  return DropdownButtonFormField<int>(
-                    value: value,
-                    decoration: const InputDecoration(
-                      labelText: "Termination Type",
-                      border: OutlineInputBorder(),
-                    ),
-                    items: controller.terminationTypes.map((type) {
-                      return DropdownMenuItem(
-                        value: type.id,
-                        child: Text(type.name ?? ""),
-                      );
-                    }).toList(),
-                    onChanged: (val) => selectedType.value = val,
+
+            /// Reactive Dropdown for Termination Type
+            Obx(() {
+              if (controller.terminationTypes.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return DropdownButtonFormField<int>(
+                value: selectedType.value == 0 ? null : selectedType.value,
+                decoration: const InputDecoration(
+                  labelText: "Termination Type",
+                  border: OutlineInputBorder(),
+                ),
+                items: controller.terminationTypes.map((type) {
+                  return DropdownMenuItem<int>(
+                    value: type.id,
+                    child: Text(type.name ?? ""),
                   );
-                });
-              },
-            ),
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) selectedType.value = val;
+                },
+              );
+            }),
             const SizedBox(height: 12),
+
+            /// Dropdown for Blacklist Yes/No
+            Obx(() {
+              return DropdownButtonFormField<bool>(
+                value: isBlacklisted!.value,
+                decoration: const InputDecoration(
+                  labelText: "Is Blacklisted?",
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem<bool>(value: true, child: Text("Yes")),
+                  DropdownMenuItem<bool>(value: false, child: Text("No")),
+                ],
+                onChanged: (val) {
+                  if (val != null) isBlacklisted.value = val;
+                },
+              );
+            }),
+            const SizedBox(height: 12),
+
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -409,6 +427,7 @@ void _showTerminationDialog(
               ),
             ),
             const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -425,12 +444,13 @@ void _showTerminationDialog(
                   onPressed: () {
                     if (employee.employeeId != null &&
                         terminationDateController.text.isNotEmpty &&
-                        selectedType.value != null) {
+                        selectedType.value != 0) {
                       controller.createTerminationController(
                         employeeId: int.parse(employee.employeeId!),
                         terminationDate: terminationDateController.text.trim(),
-                        terminationType: selectedType.value!,
+                        terminationType: selectedType.value,
                         description: descriptionController.text.trim(),
+                        isblacklisted: isBlacklisted!.value, // pass value
                       );
                       Get.back();
                     } else {
@@ -450,6 +470,7 @@ void _showTerminationDialog(
     ),
   );
 }
+
 
 
 /// Common dialog theme
@@ -604,15 +625,15 @@ void _showEarlyLeaveDialog(
   );
 }
 
-/// OVERTIME DIALOG
+
 void _showOverTimeDialog(
   BuildContext context,
   EmployeeListController controller,
   Data employee,
 ) {
   final dateController2 = TextEditingController();
-  final timeController2 = TextEditingController();
   final reasonController2 = TextEditingController();
+  int selectedHour = 1; // default 1 hour
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -626,25 +647,23 @@ void _showOverTimeDialog(
     }
   }
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
-      timeController2.text = DateFormat("HH:mm:ss").format(dt);
-    }
-  }
-
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: Colors.white,
-      child: _buildThemedDialogContent(
-        title: "Overtime - ${employee.name}",
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              "Overtime - ${employee.name}",
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+
+            /// Date Picker
             TextField(
               controller: dateController2,
               readOnly: true,
@@ -658,19 +677,27 @@ void _showOverTimeDialog(
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: timeController2,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Overtime (HH:mm:ss)",
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.access_time),
-                  onPressed: _pickTime,
-                ),
-                border: const OutlineInputBorder(),
+
+            /// Hours Picker Dropdown
+            DropdownButtonFormField<int>(
+              value: selectedHour,
+              decoration: const InputDecoration(
+                labelText: "Overtime (hours)",
+                border: OutlineInputBorder(),
               ),
+              items: List.generate(24, (index) => index + 1) // 1 to 24 hours
+                  .map((hour) => DropdownMenuItem(
+                        value: hour,
+                        child: Text("$hour hr${hour > 1 ? 's' : ''}"),
+                      ))
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) selectedHour = val;
+              },
             ),
             const SizedBox(height: 12),
+
+            /// Reason
             TextField(
               controller: reasonController2,
               decoration: const InputDecoration(
@@ -679,6 +706,8 @@ void _showOverTimeDialog(
               ),
             ),
             const SizedBox(height: 16),
+
+            /// Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -694,10 +723,13 @@ void _showOverTimeDialog(
                   ),
                   onPressed: () {
                     if (employee.employeeId != null) {
+                      final overtimeText =
+                          selectedHour.toString().padLeft(2, '0') + ":00:00";
+
                       controller.updateOverTimeController(
                         empId: employee.employeeId.toString(),
                         date: dateController2.text.trim(),
-                        overtime: timeController2.text.trim(),
+                        overtime: overtimeText,
                         reason: reasonController2.text.trim(),
                       );
                     } else {

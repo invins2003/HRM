@@ -382,6 +382,7 @@ RxBool isTerminationTypeLoading = false.obs;
 var terminations = <Termination>[].obs;
 
 Future<void> createTerminationController({
+  required bool isblacklisted,
   required int employeeId,
   required String terminationDate,
   required int terminationType,
@@ -391,6 +392,7 @@ Future<void> createTerminationController({
     isTerminationLoading.value = true;
 
     final response = await employeeListRepo.createTermination(
+      isblacklisted: isblacklisted,
       employeeId: employeeId,
       terminationDate: terminationDate,
       terminationType: terminationType,

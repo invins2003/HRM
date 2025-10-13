@@ -6,7 +6,7 @@ class ProfileRepo {
   final ApiClient apiClient = ApiClient(appBaseUrl: Constants.BASEURL);
 
   Future<ProfileModel> getProfile() async {
-    final response = await apiClient.getData("/api/profile");
+    final response = await apiClient.getData(Constants.MYPROFILE);
     print("Profile API Response: ${response.bodyString}"); // Debug
 
     if (response.statusCode == 200) {

@@ -30,15 +30,23 @@ class _ExpenseScreenState extends State<ExpenseScreen>
     expenseController.fetchExpenses();
     expenseController.getLatestBalance();
     expenseController.fetchMyFundRequests();
+    expenseController.fetchExpenseCategories();
   }
 
   /// Expense Used Reason Dialog
- void showUsedReasonDialog() {
+void showUsedReasonDialog() {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController taxRateController = TextEditingController();
+
   bool isTaxable = false;
   File? selectedFile;
+  int? selectedCategoryId;
+
+  // Fetch categories if not already fetched
+  // if (expenseController.categoryList.isEmpty) {
+  //   expenseController.fetchExpenseCategories();
+  // }
 
   showDialog(
     context: context,
@@ -70,6 +78,40 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                 ),
                 const SizedBox(height: 12),
 
+                /// Category Dropdown
+                Obx(() {
+                  if (expenseController.isFetchingCategories.value) {
+                    return const Center(child: CircularProgressIndicator(color: Colors.green));
+                  }
+
+                  final categories = expenseController.categoryList;
+                  if (categories.isEmpty) {
+                    return const Text("No categories found", style: TextStyle(color: Colors.red));
+                  }
+
+                  return DropdownButtonFormField<int>(
+                    value: selectedCategoryId,
+                    items: categories.map(
+                      (cat) => DropdownMenuItem<int>(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      ),
+                    ).toList(),
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        selectedCategoryId = value!;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.category, color: Colors.green),
+                      labelText: "Select Category",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+
                 /// Amount
                 TextField(
                   controller: amountController,
@@ -77,19 +119,6 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.currency_rupee, color: Colors.green),
                     labelText: "Amount",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                /// Tax Rate
-                TextField(
-                  controller: taxRateController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.percent, color: Colors.green),
-                    labelText: "Tax Rate (%)",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -120,6 +149,24 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                 ),
                 const SizedBox(height: 12),
 
+                /// Tax Rate (only if taxable)
+                if (isTaxable)
+                  Column(
+                    children: [
+                      TextField(
+                        controller: taxRateController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.percent, color: Colors.green),
+                          labelText: "Tax Rate (%)",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+
                 /// File Picker
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -134,7 +181,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                   icon: const Icon(Icons.attach_file, color: Colors.green),
                   label: Text(
                     selectedFile == null
-                        ? "Attach Document (optional)"
+                        ? "Attach Document ${isTaxable ? '(required)' : '(optional)'}"
                         : "Attached: ${selectedFile!.path.split('/').last}",
                     style: const TextStyle(color: Colors.green),
                   ),
@@ -165,10 +212,21 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                         /// Validation
                         if (descriptionController.text.isEmpty ||
                             amountController.text.isEmpty ||
-                            taxRateController.text.isEmpty) {
+                            selectedCategoryId == null ||
+                            (isTaxable && taxRateController.text.isEmpty)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text("Please fill all fields!"),
+                              content: Text("Please fill all required fields!"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (isTaxable && selectedFile == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Document upload is required for taxable expenses!"),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -205,6 +263,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                           taxRate: taxRate ?? 0.0,
                           isTaxable: isTaxable,
                           document: selectedFile,
+                          categoryId: selectedCategoryId!, // pass the ID
                         );
 
                         if (expenseController.expenseResponse.value?.success == true) {
@@ -213,6 +272,9 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                             expenseUsed.add({
                               "amount": amount,
                               "reason": descriptionController.text,
+                              "category": expenseController.categoryList
+                                  .firstWhere((c) => c.id == selectedCategoryId)
+                                  .name,
                             });
                           });
                           Navigator.pop(context);
@@ -233,6 +295,8 @@ class _ExpenseScreenState extends State<ExpenseScreen>
     },
   );
 }
+
+
 
 
   /// Expense Request Dialog
@@ -505,7 +569,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ExpenseDetailsScreen(expense: record),
+        builder: (_) => ExpenseDetailsScreen(expense: record,categoryList:expenseController.categoryList),
       ),
     );
   },

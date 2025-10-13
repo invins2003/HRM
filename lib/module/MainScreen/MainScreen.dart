@@ -1,6 +1,11 @@
+import 'package:erp_admin/module/auth/Controller/AuthCotroller.dart';
+import 'package:erp_admin/module/auth/Repo/AuthRepo.dart';
 import 'package:erp_admin/module/expense/screens/expense_screen.dart';
 import 'package:erp_admin/module/profile/screens/myprofile_screen.dart';
+import 'package:erp_admin/utils/ApiClient.dart';
+import 'package:erp_admin/utils/Constant.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../DashBoard/Screens/DashBoardScreen.dart';
 import '../EmployeeList&Profile/Screens/EmployeeListScreen.dart';
@@ -15,12 +20,25 @@ class Mainscreen extends StatefulWidget {
 class _MainscreenState extends State<Mainscreen> {
   int _selectedIndex = 0;
 
+  late AuthController authController;
+
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize UserController
+   authController = Get.put(AuthController(authformRepo: AuthRepo(apiClient: ApiClient(appBaseUrl: Constants.BASEURL))));
+      // Run after the first frame
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    authController.fetchCurrentUser();
+  });
+  }
 
   void _onTabSelected(int index) {
     if (_selectedIndex == index) {
@@ -33,7 +51,7 @@ class _MainscreenState extends State<Mainscreen> {
     }
   }
 
-  final List<String> _screenTitles = ['DashBoard', 'EmployeeList','wallet', 'Profile'];
+  final List<String> _screenTitles = ['DashBoard', 'EmployeeList', 'Expense', 'Profile'];
 
   Widget _buildOffstageNavigator(int index) {
     return Offstage(
@@ -53,8 +71,8 @@ class _MainscreenState extends State<Mainscreen> {
               page = ExpenseScreen();
               break;
             case 3:
-             page = ProfileScreen();
-             break;  
+              page = ProfileScreen();
+              break;
             default:
               page = Dashboardscreen();
           }
@@ -66,57 +84,81 @@ class _MainscreenState extends State<Mainscreen> {
 
   Future<bool> _onWillPop() async {
     if (_navigatorKeys[_selectedIndex].currentState!.canPop()) {
-      // If the current tab's navigator can pop, go back
       _navigatorKeys[_selectedIndex].currentState!.pop();
-      return Future.value(false); // Don't exit app
+      return Future.value(false); 
     } else {
       if (_selectedIndex != 0) {
-        // If not on Home tab, switch to Home
         setState(() {
           _selectedIndex = 0;
         });
-        return Future.value(false); // Stay in app
+        return Future.value(false);
       }
-      // If already on Home tab, allow app exit
       return Future.value(true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            _screenTitles[_selectedIndex],
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.green,
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Stack(
-  children: List.generate(_navigatorKeys.length, (index) => _buildOffstageNavigator(index)),
-),
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Colors.green,
-          currentIndex: _selectedIndex,
-          onTap: _onTabSelected,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'DashBoard'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'EmployeeList',
+    return Obx(() {
+      // Wait for user permissions to load
+      if (authController.isLoading.value) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator(color: Colors.green)),
+        );
+      }
+
+      // Determine which tabs to show
+      List<BottomNavigationBarItem> bottomItems = [
+        const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'DashBoard'),
+        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'EmployeeList'),
+      ];
+
+      List<Widget> screens = [
+        Dashboardscreen(),
+        EmployeeScreen(),
+      ];
+
+      // Add Expense tab only if user has permission
+      if (authController.hasExpensePermission.value) {
+        bottomItems.add(
+          const BottomNavigationBarItem(icon: Icon(Icons.wallet_rounded), label: "Branch Wallet"),
+        );
+        screens.add(ExpenseScreen());
+      }
+
+      // Always add Profile tab
+      bottomItems.add(
+        const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+      );
+      screens.add(ProfileScreen());
+
+      return WillPopScope(
+        onWillPop: _onWillPop,
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Text(
+              _screenTitles[_selectedIndex],
+              style: const TextStyle(color: Colors.white),
             ),
-              BottomNavigationBarItem(icon: Icon(Icons.wallet_rounded),label: "Branch Wallet"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
+            backgroundColor: Colors.green,
+          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: screens,
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            backgroundColor: Colors.green,
+            currentIndex: _selectedIndex,
+            onTap: (index) => setState(() => _selectedIndex = index),
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white54,
+            items: bottomItems,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

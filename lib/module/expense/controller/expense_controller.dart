@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:erp_admin/module/expense/model/all_expense_model.dart';
+import 'package:erp_admin/module/expense/model/expense_category.dart';
 import 'package:erp_admin/module/expense/model/fund_request_model.dart';
 import 'package:erp_admin/module/expense/model/request_fund_list_model.dart';
 import 'package:get/get.dart';
@@ -15,7 +16,30 @@ class ExpenseController extends GetxController {
   Rx<ExpenseResponse?> expenseList = Rx<ExpenseResponse?>(null);
   Rx<ExpenseModel?> expenseResponse = Rx<ExpenseModel?>(null);
 
+
+
+  RxList<ExpenseCategory> categoryList = <ExpenseCategory>[].obs;
+  RxBool isFetchingCategories = false.obs;
+
+  Future<void> fetchExpenseCategories() async {
+    try {
+      isFetchingCategories.value = true;
+      final result = await expenseRepo.getExpenseCategories();
+
+      if (result.isNotEmpty) {
+        categoryList.assignAll(result);
+      } else {
+        Fluttertoast.showToast(msg: "No categories found ❌");
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error fetching categories: $e");
+    } finally {
+      isFetchingCategories.value = false;
+    }
+  }
+
   Future<void> createExpense({
+    required int categoryId,
     required String description,
     required double amount,
     required double taxRate,
@@ -30,6 +54,7 @@ class ExpenseController extends GetxController {
       taxRate: taxRate,
       isTaxable: isTaxable,
       document: document,
+      categoryId: categoryId
     );
 
     isLoading.value = false;

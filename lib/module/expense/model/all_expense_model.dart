@@ -24,6 +24,7 @@ class Expense {
   double totalAmount;
   String paymentsStatus;
   int createdBy;
+  int? categoryId;
   String description;
   String? document;
   bool isDeleted;
@@ -41,6 +42,7 @@ class Expense {
     required this.totalAmount,
     required this.paymentsStatus,
     required this.createdBy,
+    this.categoryId,
     required this.description,
     this.document,
     required this.isDeleted,
@@ -60,6 +62,7 @@ class Expense {
       totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0.0,
       paymentsStatus: json['payments_status'],
       createdBy: json['created_by'],
+      categoryId: json['category_id'],
       description: json['description'] ?? '',
       document: json['document'],
       isDeleted: json['is_deleted'] ?? false,
