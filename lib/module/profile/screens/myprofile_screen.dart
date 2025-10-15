@@ -52,10 +52,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icons.shield_outlined, "Role", profile.type),
                       _buildInfoTile(Icons.toggle_on_outlined, "Status",
                           profile.isActive == 1 ? "Active" : "Inactive"),
-                      _buildInfoTile(
-                          Icons.person_add_alt_1_outlined,
-                          "Created By",
-                          profile.createdBy?.toString() ?? '-'),
+                     Obx(() => _buildInfoTile(
+      Icons.person_add_alt_1_outlined,
+      "Created By",
+      controller.createdByName.value.isNotEmpty
+          ? controller.createdByName.value
+          : '-',
+)),
                     ],
                   ),
                   _buildInfoCard(
