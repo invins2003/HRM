@@ -8,6 +8,8 @@ import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:get/get.dart';
 import '../Model/expense_model.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart'; 
 
 class ExpenseRepo {
   final ApiClient apiClient= ApiClient(appBaseUrl: Constants.BASEURL);
@@ -33,46 +35,49 @@ class ExpenseRepo {
     }
   }
 
-  Future<ExpenseModel?> createExpense({
-    required int categoryId,
-    required String description,
-    required double amount,
-    required double taxRate,
-    required bool isTaxable,
-    File? document,
-  }) async {
-    try {
-      final formData = FormData({
-        "category_id": categoryId,
-        "description": description,
-        "amount": amount,
-        "tax_rate": taxRate,
-        "is_taxable": isTaxable ? 1 : 0,
-        if (document != null)
-          "document": MultipartFile(
-            document,
-            filename: document.path.split('/').last,
-          ),
-      });
 
-      final response = await apiClient.postDataWithFile(
-        Constants.CREATEEXPENSE, // 🔧 change endpoint if needed
-        formData,
+Future<ExpenseModel?> createExpense({
+  required int categoryId,
+  required String description,
+  required double amount,
+  required double taxRate,
+  required bool isTaxable,
+  File? document,
+}) async {
+  try {
+    final formData = FormData({
+      "category_id": categoryId,
+      "description": description,
+      "amount": amount,
+      "tax_rate": taxRate,
+      "is_taxable": isTaxable ? 1 : 0,
+      if (document != null)
+        "document": MultipartFile(
+          document.path,
+          filename: document.path.split('/').last,
+          contentType: lookupMimeType(document.path).toString(), // ✅ String MIME type
+        ),
+    });
+
+    final response = await apiClient.postDataWithFile(
+      Constants.CREATEEXPENSE,
+      formData,
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return ExpenseModel.fromJson(response.body);
+    } else {
+      return ExpenseModel(
+        success: false,
+        message: "Failed with status: ${response.statusCode}",
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ExpenseModel.fromJson(response.body);
-      } else {
-        return ExpenseModel(
-          success: false,
-          message: "Failed with status: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      print("Error in createExpense: $e");
-      return ExpenseModel(success: false, message: e.toString());
     }
+  } catch (e) {
+    print("Error in createExpense: $e");
+    return ExpenseModel(success: false, message: e.toString());
   }
+}
+
 
 
    Future<ExpenseResponse> fetchExpenses() async {

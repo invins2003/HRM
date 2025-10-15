@@ -110,7 +110,7 @@ class _MainscreenState extends State<Mainscreen> {
       // Determine which tabs to show
       List<BottomNavigationBarItem> bottomItems = [
         const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'DashBoard'),
-        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'EmployeeList'),
+        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Employees'),
       ];
 
       List<Widget> screens = [

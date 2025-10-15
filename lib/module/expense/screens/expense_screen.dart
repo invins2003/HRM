@@ -170,8 +170,11 @@ void showUsedReasonDialog() {
                 /// File Picker
                 OutlinedButton.icon(
                   onPressed: () async {
-                    FilePickerResult? result =
-                        await FilePicker.platform.pickFiles(type: FileType.any);
+                    FilePickerResult? result = await FilePicker.platform.pickFiles(
+  type: FileType.custom,
+  allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf'],
+);
+
                     if (result != null) {
                       setStateDialog(() {
                         selectedFile = File(result.files.single.path!);
@@ -658,7 +661,7 @@ Obx(() {
               final request = requests[index];
 
               Color statusColor = Colors.orange;
-              if (request.status?.toLowerCase() == 'approved') {
+              if (request.status?.toLowerCase() == 'paid') {
                 statusColor = Colors.green;
               } else if (request.status?.toLowerCase() == 'rejected') {
                 statusColor = Colors.red;

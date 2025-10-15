@@ -16,7 +16,7 @@ class EmployeeListRepo extends GetxController implements GetxService {
   ApiClient apiClient;
   EmployeeListRepo({required this.apiClient});
 
-   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  //  final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   Future<Response> employeeListFormRepo() async {
     print("ApiClient.getData ---> ${Constants.EMPLOYEELIST}");
