@@ -227,44 +227,50 @@ class ExpenseDetailsScreen extends StatelessWidget {
   }
 
   Widget _detailRow({
-      required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String value,
-    bool isLink = false,
-    VoidCallback? onTap,
-    Widget Function(BuildContext context, String value, bool isLink)? builder,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.grey.shade500, size: 20),
-          const SizedBox(width: 16),
-          Expanded(child: Text(title, style: TextStyle(fontSize: 14, color: Colors.grey.shade600))),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: builder != null
-                ? builder(context, value, isLink)
-                : GestureDetector(
-                    onTap: isLink ? onTap : null,
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: isLink ? Colors.green : Colors.black87,
-                        decoration: isLink ? TextDecoration.underline : TextDecoration.none,
-                        decorationColor: Colors.green,
-                      ),
+  required BuildContext context,
+  required IconData icon,
+  required String title,
+  required String value,
+  bool isLink = false,
+  VoidCallback? onTap,
+  Widget Function(BuildContext context, String value, bool isLink)? builder,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.grey.shade500, size: 20),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Remove Expanded here
+        builder != null
+            ? builder(context, value, isLink)
+            : GestureDetector(
+                onTap: isLink ? onTap : null,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: isLink ? Colors.green : Colors.black87,
+                      decoration: isLink ? TextDecoration.underline : TextDecoration.none,
+                      decorationColor: Colors.green,
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
+                ),
+              ),
+      ],
+    ),
+  );
+}
 }
