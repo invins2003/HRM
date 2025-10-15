@@ -36,12 +36,21 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // 👇 Action when FAB is pressed
+          print('Floating Action Button Pressed!');
+          _showEmployeeSearchDialog(context);
+        },
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           const SizedBox(height: 10),
 
           // Register Employee Button
-          _buildRegisterEmployeeButton(),
+          // _buildRegisterEmployeeButton(),
 
           // Check-in Row
           Padding(
