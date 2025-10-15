@@ -9,22 +9,23 @@ class EmployeeProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inject Controller
     final EmployeeProfileController controller = Get.put(
       EmployeeProfileController(employeeProfileRepo: Get.find()),
     );
 
-    // API call
     controller.profileController(employeeId);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        backgroundColor: Colors.green,
+        elevation: 0,
         title: const Text(
           "Employee Profile",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.green,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Obx(() {
         if (controller.isloading.value) {
@@ -43,61 +44,110 @@ class EmployeeProfileScreen extends StatelessWidget {
         final profile = controller.Profiledata.value.data;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(10),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              children: [
-                /// Avatar
-                Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.green.shade400,
-                    child: const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            children: [
+              /// Profile Avatar
+              CircleAvatar(
+                radius: 55,
+                backgroundColor: Colors.green.shade300,
+                child: const Icon(Icons.person, color: Colors.white, size: 55),
+              ),
+              const SizedBox(height: 16),
 
-                /// Details in ListTile format
-                ListTile(
-                  leading: const Icon(Icons.badge, color: Colors.green),
-                  title: const Text("Employee ID"),
-                  subtitle: Text(profile?.employeeId?.toString() ?? "--"), // ✅ FIXED
+              /// Name
+              Text(
+                profile?.name ?? "--",
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-                ListTile(
-                  leading: const Icon(Icons.person, color: Colors.green),
-                  title: const Text("Name"),
-                  subtitle: Text(profile?.name?.toString() ?? "--"), // ✅ SAFE
+              ),
+              const SizedBox(height: 4),
+
+              /// Designation
+              Text(
+                profile?.designation?.name ?? "--",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.green.shade700,
                 ),
-                ListTile(
-                  leading: const Icon(Icons.email, color: Colors.green),
-                  title: const Text("Email"),
-                  subtitle: Text(profile?.email?.toString() ?? "--"),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.phone, color: Colors.green),
-                  title: const Text("Mobile"),
-                  subtitle: Text(profile?.phone?.toString() ?? "--"),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.account_tree, color: Colors.green),
-                  title: const Text("Department"),
-                  subtitle: Text(profile?.department?.name.toString() ?? "--"),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.work, color: Colors.green),
-                  title: const Text("Designation"),
-                  subtitle: Text(profile?.designation?.name.toString() ?? "--"),
-                ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 25),
+
+              /// Info Cards
+              _infoCard(
+                icon: Icons.badge,
+                title: "Employee ID",
+                value: profile?.employeeId?.toString() ?? "--",
+              ),
+              _infoCard(
+                icon: Icons.email,
+                title: "Email",
+                value: profile?.email ?? "--",
+              ),
+              _infoCard(
+                icon: Icons.phone,
+                title: "Mobile",
+                value: profile?.phone ?? "--",
+              ),
+              _infoCard(
+                icon: Icons.account_tree,
+                title: "Department",
+                value: profile?.department?.name ?? "--",
+              ),
+              _infoCard(
+                icon: Icons.work,
+                title: "Designation",
+                value: profile?.designation?.name ?? "--",
+              ),
+            ],
           ),
         );
       }),
+    );
+  }
+
+  /// Custom Rounded Info Card
+  Widget _infoCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green.shade100,
+          child: Icon(icon, color: Colors.green.shade700),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 15, color: Colors.black87),
+        ),
+      ),
     );
   }
 }

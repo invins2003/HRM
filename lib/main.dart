@@ -1,4 +1,5 @@
 import 'package:erp_admin/config/env_config.dart';
+import 'package:erp_admin/theme/themes.dart';
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,13 +7,12 @@ import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:google_fonts/google_fonts.dart'; // ✅ Google Fonts
 import 'module/auth/screens/signin.dart';
 import 'module/MainScreen/MainScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    await EnvConfig.load();
+  await EnvConfig.load();
     await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -66,73 +66,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'HRM',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.white,
-        textTheme: GoogleFonts.robotoTextTheme(  // ✅ Apply Poppins font
-          Theme.of(context).textTheme,
-        ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          elevation: 2,
-          centerTitle: true,
-          titleTextStyle: GoogleFonts.roboto(   // ✅ Use Google Font for AppBar
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            textStyle: GoogleFonts.roboto(fontSize: 16), // ✅ Button font
-          ),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.green,
-            textStyle: GoogleFonts.roboto(), // ✅ TextButton font
-          ),
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-        ),
-        progressIndicatorTheme: const ProgressIndicatorThemeData(
-          color: Colors.green,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.green),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.green, width: 2),
-          ),
-          hintStyle: GoogleFonts.roboto(), // ✅ Input hint text font
-        ),
-        datePickerTheme: DatePickerThemeData(
-          backgroundColor: Colors.white,
-          headerBackgroundColor: Colors.green,
-          headerForegroundColor: Colors.white,
-          dayForegroundColor: WidgetStateProperty.all(Colors.black87),
-          dayOverlayColor: WidgetStateProperty.all(Colors.green.withOpacity(0.15)),
-          todayForegroundColor: WidgetStateProperty.all(Colors.white),
-          todayBackgroundColor: WidgetStateProperty.all(Colors.green),
-          yearForegroundColor: WidgetStateProperty.all(Colors.black87),
-          yearOverlayColor: WidgetStateProperty.all(Colors.green.withOpacity(0.15)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      ),
+      theme: AppTheme.buildThemeData(context),
       home: FutureBuilder<Widget>(
         future: _checkLoginStatus(),
         builder: (context, snapshot) {
