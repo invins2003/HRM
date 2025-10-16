@@ -436,7 +436,7 @@ void _showTerminationDialog(
             /// Dropdown for Blacklist Yes/No
             Obx(() {
               return DropdownButtonFormField<bool>(
-                value: isBlacklisted!.value,
+                value: isBlacklisted.value,
                 decoration: const InputDecoration(
                   labelText: "Is Blacklisted?",
                   border: OutlineInputBorder(),
@@ -483,7 +483,7 @@ void _showTerminationDialog(
                         terminationDate: terminationDateController.text.trim(),
                         terminationType: selectedType.value,
                         description: descriptionController.text.trim(),
-                        isblacklisted: isBlacklisted!.value, // pass value
+                        isblacklisted: isBlacklisted.value, // pass value
                       );
                       Get.back();
                     } else {

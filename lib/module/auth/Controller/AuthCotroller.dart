@@ -1,7 +1,6 @@
 import 'dart:developer';
 
 import 'package:erp_admin/module/auth/Model/loginModel.dart';
-import 'package:erp_admin/module/auth/Model/usermodel.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
