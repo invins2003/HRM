@@ -373,9 +373,9 @@ void _showTerminationDialog(
                   onPressed: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      firstDate: DateTime(2020),
-                      // lastDate: DateTime(2100),
-                      lastDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2100),
+                      // lastDate: DateTime.now(),
                       initialDate: DateTime.now(),
                       // date color
                       builder: (BuildContext context, Widget? child) {
@@ -436,7 +436,7 @@ void _showTerminationDialog(
             /// Dropdown for Blacklist Yes/No
             Obx(() {
               return DropdownButtonFormField<bool>(
-                value: isBlacklisted!.value,
+                value: isBlacklisted.value,
                 decoration: const InputDecoration(
                   labelText: "Is Blacklisted?",
                   border: OutlineInputBorder(),
@@ -483,7 +483,7 @@ void _showTerminationDialog(
                         terminationDate: terminationDateController.text.trim(),
                         terminationType: selectedType.value,
                         description: descriptionController.text.trim(),
-                        isblacklisted: isBlacklisted!.value, // pass value
+                        isblacklisted: isBlacklisted.value, // pass value
                       );
                       Get.back();
                     } else {
@@ -544,7 +544,7 @@ Widget _buildThemedDialogContent({
   );
 }
 
-/// EARLY LEAVE DIALOG
+/// EARLY LEAVE DIALOG ----->.....
 void _showEarlyLeaveDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -557,9 +557,13 @@ void _showEarlyLeaveDialog(
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(2020),
-      // lastDate: DateTime(2100),
-      lastDate: DateTime.now(),
+      // firstDate: DateTime(2020),
+      // // lastDate: DateTime(2100),
+      // lastDate: DateTime.now(),
+      // initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+      // lastDate: DateTime.now(),
       initialDate: DateTime.now(),
       builder: (BuildContext context, Widget? child) {
         return Theme(
@@ -674,6 +678,7 @@ void _showEarlyLeaveDialog(
   );
 }
 
+// OverTime Dialog Here ------>>>>
 void _showOverTimeDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -690,6 +695,10 @@ void _showOverTimeDialog(
       // lastDate: DateTime(2100),
       lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      // firstDate: DateTime.now(),
+      // lastDate: DateTime(2100),
+      // // lastDate: DateTime.now(),
+      // initialDate: DateTime.now(),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.light().copyWith(
@@ -820,7 +829,7 @@ void _showOverTimeDialog(
   );
 }
 
-/// MANAGE ATTENDANCE DIALOG
+/// MANAGE ATTENDANCE DIALOG ------->>>>>>
 void _showManageAttendanceDialog(
   BuildContext context,
   EmployeeListController controller,
