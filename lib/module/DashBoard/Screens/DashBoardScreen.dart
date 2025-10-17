@@ -40,9 +40,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         Scaffold(
           backgroundColor: Colors.white,
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              _showEmployeeSearchDialog(context);
-            },
+            onPressed: () => _showEmployeeSearchDialog(context),
             backgroundColor: Colors.green,
             child: const Icon(Icons.add),
           ),
@@ -60,7 +58,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           ),
         ),
 
-        // ✅ Loader overlay when processing
+        // ✅ Loader overlay
         if (_isProcessing)
           Container(
             color: Colors.black.withOpacity(0.6),
@@ -131,9 +129,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                   Text(
                     DateFormat('EEEE, MMM d, yyyy').format(selectedDate),
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.black87),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                   ),
                 ],
               ),
@@ -159,18 +158,45 @@ class _DashboardscreenState extends State<Dashboardscreen> {
       }
 
       if (controller.attendanceList.isEmpty) {
-        return const Center(child: Text("No employees found"));
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.people_outline, size: 60, color: Colors.grey),
+              const SizedBox(height: 10),
+              const Text("No employees found",
+                  style: TextStyle(fontSize: 16, color: Colors.black54)),
+              const SizedBox(height: 15),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await controller.listtController();
+                  await controller.presentListtController(selectedDate);
+                },
+                icon: const Icon(Icons.refresh, size: 20),
+                label: const Text("Retry"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       }
 
       return RefreshIndicator(
         color: Colors.green,
+        backgroundColor: Colors.white,
         onRefresh: () async {
           await controller.listtController();
           await controller.presentListtController(selectedDate);
         },
-        child: EmployeeListWidget(
-          employeelist: controller.attendanceList,
-        ),
+        child: EmployeeListWidget(employeelist: controller.attendanceList),
       );
     });
   }
@@ -192,17 +218,18 @@ class _DashboardscreenState extends State<Dashboardscreen> {
             ),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Icon(Icons.verified, color: Colors.white, size: 28),
               SizedBox(width: 10),
               Text(
                 "Check-in",
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600),
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
