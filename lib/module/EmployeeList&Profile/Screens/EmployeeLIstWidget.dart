@@ -691,14 +691,14 @@ void _showOverTimeDialog(
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      // firstDate: DateTime(2020),
-      // // lastDate: DateTime(2100),
-      // lastDate: DateTime.now(),
-      // initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-      // lastDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      // lastDate: DateTime(2100),
+      lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      // firstDate: DateTime.now(),
+      // lastDate: DateTime(2100),
+      // // lastDate: DateTime.now(),
+      // initialDate: DateTime.now(),
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.light().copyWith(
