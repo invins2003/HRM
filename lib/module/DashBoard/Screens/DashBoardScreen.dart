@@ -246,7 +246,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                   await controller.presentListtController(selectedDate);
                 },
                 child: EmployeeListWidget(
-                  employeelist: controller.attendanceList,
+                  presentemployeelist: controller.attendanceList,
                 ),
               );
             }),
