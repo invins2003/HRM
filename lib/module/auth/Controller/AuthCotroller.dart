@@ -1,7 +1,6 @@
-
+import 'dart:developer';
 
 import 'package:erp_admin/module/auth/Model/loginModel.dart';
-import 'package:erp_admin/module/auth/Model/usermodel.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -41,7 +40,8 @@ class AuthController extends GetxController {
 
         return true;
       } else {
-        Fluttertoast.showToast(msg: "Login failed");
+        Fluttertoast.showToast(msg: "Login failed ${response.statusCode}");
+        log("Status Code :------ ${response.statusCode}");
         return false;
       }
     } catch (e) {
@@ -53,7 +53,6 @@ class AuthController extends GetxController {
     }
   }
 
-
   var isLoading1 = true.obs;
   var hasExpensePermission = false.obs;
   Future<void> fetchCurrentUser() async {
@@ -62,11 +61,13 @@ class AuthController extends GetxController {
       final user = await authformRepo.fetchCurrentUser();
 
       // Check permission logic
-      hasExpensePermission.value = user.permissions.any((p) =>
-          p == "manage expense" ||
-          p == "create expense" ||
-          p == "edit expense" ||
-          p == "delete expense");
+      hasExpensePermission.value = user.permissions.any(
+        (p) =>
+            p == "manage expense" ||
+            p == "create expense" ||
+            p == "edit expense" ||
+            p == "delete expense",
+      );
     } catch (e) {
       print("Error fetching user: $e");
     } finally {
@@ -74,4 +75,3 @@ class AuthController extends GetxController {
     }
   }
 }
-

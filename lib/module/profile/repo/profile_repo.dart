@@ -23,4 +23,21 @@ class ProfileRepo {
       throw Exception(errorMsg);
     }
   }
+
+
+   Future<String> getUserNameById(int userId) async {
+    final response = await apiClient.getData("/api/users/$userId");
+    print("User API Response: ${response.bodyString}"); // Debug
+
+    if (response.statusCode == 200) {
+      final data = response.body;
+      if (data != null && data['name'] != null) {
+        return data['name'];
+      } else {
+        return "Unknown";
+      }
+    } else {
+      return "Unknown";
+    }
+  }
 }

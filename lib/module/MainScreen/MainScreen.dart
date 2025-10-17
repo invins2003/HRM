@@ -33,11 +33,17 @@ class _MainscreenState extends State<Mainscreen> {
   void initState() {
     super.initState();
     // Initialize UserController
-   authController = Get.put(AuthController(authformRepo: AuthRepo(apiClient: ApiClient(appBaseUrl: Constants.BASEURL))));
-      // Run after the first frame
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    authController.fetchCurrentUser();
-  });
+    authController = Get.put(
+      AuthController(
+        authformRepo: AuthRepo(
+          apiClient: ApiClient(appBaseUrl: Constants.BASEURL),
+        ),
+      ),
+    );
+    // Run after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      authController.fetchCurrentUser();
+    });
   }
 
   void _onTabSelected(int index) {
@@ -51,7 +57,12 @@ class _MainscreenState extends State<Mainscreen> {
     }
   }
 
-  final List<String> _screenTitles = ['DashBoard', 'EmployeeList', 'Expense', 'Profile'];
+  final List<String> _screenTitles = [
+    'DashBoard',
+    'EmployeeList',
+    'Expense',
+    'Profile',
+  ];
 
   Widget _buildOffstageNavigator(int index) {
     return Offstage(
@@ -85,7 +96,7 @@ class _MainscreenState extends State<Mainscreen> {
   Future<bool> _onWillPop() async {
     if (_navigatorKeys[_selectedIndex].currentState!.canPop()) {
       _navigatorKeys[_selectedIndex].currentState!.pop();
-      return Future.value(false); 
+      return Future.value(false);
     } else {
       if (_selectedIndex != 0) {
         setState(() {
@@ -109,26 +120,35 @@ class _MainscreenState extends State<Mainscreen> {
 
       // Determine which tabs to show
       List<BottomNavigationBarItem> bottomItems = [
-        const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'DashBoard'),
-        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Employees'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'DashBoard',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.search),
+          label: 'Employees',
+        ),
       ];
 
-      List<Widget> screens = [
-        Dashboardscreen(),
-        EmployeeScreen(),
-      ];
+      List<Widget> screens = [Dashboardscreen(), EmployeeScreen()];
 
       // Add Expense tab only if user has permission
       if (authController.hasExpensePermission.value) {
         bottomItems.add(
-          const BottomNavigationBarItem(icon: Icon(Icons.wallet_rounded), label: "Branch Wallet"),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.wallet_rounded),
+            label: "Wallet",
+          ),
         );
         screens.add(ExpenseScreen());
       }
 
       // Always add Profile tab
       bottomItems.add(
-        const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+        ),
       );
       screens.add(ProfileScreen());
 
@@ -144,10 +164,7 @@ class _MainscreenState extends State<Mainscreen> {
             backgroundColor: Colors.green,
           ),
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: screens,
-          ),
+          body: IndexedStack(index: _selectedIndex, children: screens),
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: Colors.green,
             currentIndex: _selectedIndex,

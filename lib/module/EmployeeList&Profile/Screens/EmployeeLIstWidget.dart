@@ -16,7 +16,9 @@ class ListWidget extends StatelessWidget {
     final EmployeeListController controller = Get.put(
       EmployeeListController(employeeListRepo: Get.find()),
     );
-final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
+    final activeEmployees = employeelist
+        .where((e) => e.isActive == true)
+        .toList();
 
     return Column(
       children: [
@@ -78,7 +80,7 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                             ),
                           );
                         }
-                      } 
+                      }
                       // else if (value == "delete") {
                       //   Get.defaultDialog(
                       //     title: "Delete Employee",
@@ -100,7 +102,7 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                       //       Get.back();
                       //     },
                       //   );
-                      // } 
+                      // }
                       else if (value == "leave") {
                         if (employee.employeeId != null) {
                           Get.to(
@@ -111,15 +113,11 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                         } else {
                           Get.snackbar("Error", "Employee ID not available");
                         }
-                      } 
-                      else if (value == "terminate") {
-                        
-  _showTerminationDialog(context, controller, employee);
-}else if (value == "resign") {
-  _showResignationDialog(context, controller, employee);
-}
-
-                      else if (value == "early leave") {
+                      } else if (value == "terminate") {
+                        _showTerminationDialog(context, controller, employee);
+                      } else if (value == "resign") {
+                        _showResignationDialog(context, controller, employee);
+                      } else if (value == "early leave") {
                         _showEarlyLeaveDialog(context, controller, employee);
                       } else if (value == "Overtime") {
                         _showOverTimeDialog(context, controller, employee);
@@ -179,6 +177,7 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                           ],
                         ),
                       ),
+
                       // const PopupMenuItem(
                       //   value: "delete",
                       //   child: Row(
@@ -189,17 +188,16 @@ final activeEmployees = employeelist.where((e) => e.isActive == true).toList();
                       //     ],
                       //   ),
                       // ),
-
                       PopupMenuItem(
-  value: "resign",
-  child: Row(
-    children: [
-      Icon(Icons.logout, color: Colors.orange),
-      SizedBox(width: 8),
-      Text("Resignation"),
-    ],
-  ),
-),
+                        value: "resign",
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Resignation"),
+                          ],
+                        ),
+                      ),
 
                       const PopupMenuItem(
                         value: "manage_attendance",
@@ -245,8 +243,26 @@ void _showResignationDialog(
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      // lastDate: DateTime(2100),
+      lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green, // header background color
+              onPrimary: Colors.white, // header text color
+              onSurface: Colors.black, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green, // OK & Cancel button color
+              ),
+            ),
+          ),
+          child: child!, // original date picker with our theme
+        );
+      },
     );
     if (picked != null) {
       resignationDateController.text = DateFormat("yyyy-MM-dd").format(picked);
@@ -307,10 +323,7 @@ void _showResignationDialog(
                       );
                       Get.back();
                     } else {
-                      Get.snackbar(
-                        "Error",
-                        "Please fill all fields",
-                      );
+                      Get.snackbar("Error", "Please fill all fields");
                     }
                   },
                   child: const Text("Submit"),
@@ -323,7 +336,6 @@ void _showResignationDialog(
     ),
   );
 }
-
 
 /// TERMINATION DIALOG (Corrected & Reactive)
 void _showTerminationDialog(
@@ -361,13 +373,34 @@ void _showTerminationDialog(
                   onPressed: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      firstDate: DateTime(2020),
+                      firstDate: DateTime.now(),
                       lastDate: DateTime(2100),
+                      // lastDate: DateTime.now(),
                       initialDate: DateTime.now(),
+                      // date color
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Colors.green, // header background color
+                              onPrimary: Colors.white, // header text color
+                              onSurface: Colors.black, // body text color
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    Colors.green, // OK & Cancel button color
+                              ),
+                            ),
+                          ),
+                          child: child!, // original date picker with our theme
+                        );
+                      },
                     );
                     if (picked != null) {
-                      terminationDateController.text =
-                          DateFormat("yyyy-MM-dd").format(picked);
+                      terminationDateController.text = DateFormat(
+                        "yyyy-MM-dd",
+                      ).format(picked);
                     }
                   },
                 ),
@@ -403,7 +436,7 @@ void _showTerminationDialog(
             /// Dropdown for Blacklist Yes/No
             Obx(() {
               return DropdownButtonFormField<bool>(
-                value: isBlacklisted!.value,
+                value: isBlacklisted.value,
                 decoration: const InputDecoration(
                   labelText: "Is Blacklisted?",
                   border: OutlineInputBorder(),
@@ -450,7 +483,7 @@ void _showTerminationDialog(
                         terminationDate: terminationDateController.text.trim(),
                         terminationType: selectedType.value,
                         description: descriptionController.text.trim(),
-                        isblacklisted: isBlacklisted!.value, // pass value
+                        isblacklisted: isBlacklisted.value, // pass value
                       );
                       Get.back();
                     } else {
@@ -470,8 +503,6 @@ void _showTerminationDialog(
     ),
   );
 }
-
-
 
 /// Common dialog theme
 Widget _buildThemedDialogContent({
@@ -513,7 +544,7 @@ Widget _buildThemedDialogContent({
   );
 }
 
-/// EARLY LEAVE DIALOG
+/// EARLY LEAVE DIALOG ----->.....
 void _showEarlyLeaveDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -526,9 +557,31 @@ void _showEarlyLeaveDialog(
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(2020),
+      // firstDate: DateTime(2020),
+      // // lastDate: DateTime(2100),
+      // lastDate: DateTime.now(),
+      // initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
+      // lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green, // header background color
+              onPrimary: Colors.white, // header text color
+              onSurface: Colors.black, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green, // OK & Cancel button color
+              ),
+            ),
+          ),
+          child: child!, // original date picker with our theme
+        );
+      },
     );
     if (picked != null) {
       dateController.text = DateFormat("yyyy-MM-dd").format(picked);
@@ -625,7 +678,7 @@ void _showEarlyLeaveDialog(
   );
 }
 
-
+// OverTime Dialog Here ------>>>>
 void _showOverTimeDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -639,8 +692,30 @@ void _showOverTimeDialog(
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      // lastDate: DateTime(2100),
+      lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      // firstDate: DateTime.now(),
+      // lastDate: DateTime(2100),
+      // // lastDate: DateTime.now(),
+      // initialDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green, // header background color
+              onPrimary: Colors.white, // header text color
+              onSurface: Colors.black, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green, // OK & Cancel button color
+              ),
+            ),
+          ),
+          child: child!, // original date picker with our theme
+        );
+      },
     );
     if (picked != null) {
       dateController2.text = DateFormat("yyyy-MM-dd").format(picked);
@@ -659,7 +734,10 @@ void _showOverTimeDialog(
             Text(
               "Overtime - ${employee.name}",
               style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -685,12 +763,15 @@ void _showOverTimeDialog(
                 labelText: "Overtime (hours)",
                 border: OutlineInputBorder(),
               ),
-              items: List.generate(24, (index) => index + 1) // 1 to 24 hours
-                  .map((hour) => DropdownMenuItem(
-                        value: hour,
-                        child: Text("$hour hr${hour > 1 ? 's' : ''}"),
-                      ))
-                  .toList(),
+              items:
+                  List.generate(24, (index) => index + 1) // 1 to 24 hours
+                      .map(
+                        (hour) => DropdownMenuItem(
+                          value: hour,
+                          child: Text("$hour hr${hour > 1 ? 's' : ''}"),
+                        ),
+                      )
+                      .toList(),
               onChanged: (val) {
                 if (val != null) selectedHour = val;
               },
@@ -748,7 +829,7 @@ void _showOverTimeDialog(
   );
 }
 
-/// MANAGE ATTENDANCE DIALOG
+/// MANAGE ATTENDANCE DIALOG ------->>>>>>
 void _showManageAttendanceDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -763,8 +844,26 @@ void _showManageAttendanceDialog(
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2025),
-      lastDate: DateTime(2125),
+      // lastDate: DateTime(2125),
+      lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green, // header background color
+              onPrimary: Colors.white, // header text color
+              onSurface: Colors.black, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green, // OK & Cancel button color
+              ),
+            ),
+          ),
+          child: child!, // original date picker with our theme
+        );
+      },
     );
     if (picked != null) {
       dateController.text = DateFormat("yyyy-MM-dd").format(picked);
