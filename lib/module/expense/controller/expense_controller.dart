@@ -75,9 +75,6 @@ class ExpenseController extends GetxController {
 
       if (result.success) {
         expenseList.value = result;
-      } else {
-        expenseList.value = ExpenseResponse(success: false, data: []);
-        Fluttertoast.showToast(msg: "Failed to fetch expenses ❌");
       }
     } catch (e) {
       expenseList.value = ExpenseResponse(success: false, data: []);
