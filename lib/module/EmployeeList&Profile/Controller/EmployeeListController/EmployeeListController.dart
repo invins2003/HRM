@@ -2,6 +2,7 @@
 
 import 'dart:developer';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
+import 'package:erp_admin/module/EmployeeList&Profile/Model/employeeattendencemodel/employeeattendencemodel.dart';
 import 'package:erp_admin/module/EmployeeList&Profile/Model/leaves/employee_leaves_model.dart';
 import 'package:erp_admin/module/EmployeeList&Profile/Model/leaves/leave_create_model.dart';
 import 'package:erp_admin/module/EmployeeList&Profile/Model/leaves/leave_type_model.dart';
@@ -474,5 +475,46 @@ Future<void> createResignationController({
     isResignationLoading.value = false;
   }
 }
+
+
+
+RxBool isLoadingAttendance = false.obs;
+RxList<AttendanceRecord> attendanceList = <AttendanceRecord>[].obs;
+
+Future<void> fetchEmployeeAttendance(String empId, int month, int year) async {
+  try {
+    isLoadingAttendance.value = true;
+    attendanceList.clear();
+
+    final response = await employeeListRepo.getEmployeeAttendance(
+      empId: empId,
+      month: month,
+      year: year,
+    );
+
+    if (response.statusCode == 200 && response.body['success'] == true) {
+      final data = response.body['data'] as List<dynamic>;
+
+      // Convert each JSON object into AttendanceRecord
+      List<AttendanceRecord> records = data.map((json) {
+        return AttendanceRecord.fromJson(json);
+      }).toList();
+
+      // Sort by date ascending
+      records.sort((a, b) => a.date!.compareTo(b.date!));
+
+      attendanceList.assignAll(records);
+    }
+  } catch (e) {
+    Get.snackbar("Error", "Failed to fetch attendance");
+    print("Fetch attendance error: $e");
+  } finally {
+    isLoadingAttendance.value = false;
+  }
+}
+
+
+
+
 
 }

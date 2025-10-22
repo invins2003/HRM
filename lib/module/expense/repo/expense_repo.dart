@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:erp_admin/module/expense/model/all_expense_model.dart';
 import 'package:erp_admin/module/expense/model/expense_category.dart';
@@ -6,6 +7,7 @@ import 'package:erp_admin/module/expense/model/request_fund_list_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:get/get.dart';
+import 'package:get/get_connect/http/src/multipart/form_data.dart' hide FormData;
 import '../Model/expense_model.dart';
 import 'package:mime/mime.dart';
 
@@ -37,25 +39,19 @@ class ExpenseRepo {
 Future<ExpenseModel?> createExpense({
   required int categoryId,
   required String description,
-  required double amount,
-  required double taxRate,
-  required bool isTaxable,
-  File? document,
+  required List<Map<String, dynamic>> items,
+  required Map<String, MultipartFile> files,
 }) async {
   try {
-    final formData = FormData({
+    // Build the full FormData map
+    final Map<String, dynamic> formMap = {
       "category_id": categoryId,
       "description": description,
-      "amount": amount,
-      "tax_rate": taxRate,
-      "is_taxable": isTaxable ? 1 : 0,
-      if (document != null)
-        "document": MultipartFile(
-          document.path,
-          filename: document.path.split('/').last,
-          contentType: lookupMimeType(document.path).toString(), // ✅ String MIME type
-        ),
-    });
+      "items": jsonEncode(items), // send as JSON string
+      ...files, // spread all files: item_document_0, item_document_1, etc.
+    };
+
+    final formData = FormData(formMap);
 
     final response = await apiClient.postDataWithFile(
       Constants.CREATEEXPENSE,
@@ -75,6 +71,7 @@ Future<ExpenseModel?> createExpense({
     return ExpenseModel(success: false, message: e.toString());
   }
 }
+
 
 
 
@@ -162,6 +159,34 @@ Future<FundRequestModel?> createFundRequest({
   } catch (e) {
     print("Error fetching fund requests: $e");
     return FundRequestListModel(success: false, data: []);
+  }
+}
+
+
+Future<Response> updateStatus({
+  required int id,
+  required String status,
+}) async {
+  final body = {
+    "status": status,
+  };
+
+  try {
+    final response = await apiClient.patchData(
+      "${Constants.STATUSUPDATE}/$id/process",
+      body,
+    );
+
+    if (response.statusCode == 200) {
+      print("✅ Fund request status updated successfully: $status");
+    } else {
+      print("⚠️ Failed to update status: ${response.statusCode}");
+    }
+
+    return response;
+  } catch (e) {
+    print("❌ Error while updating fund request status: $e");
+    rethrow;
   }
 }
 }
