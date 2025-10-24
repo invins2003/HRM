@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/src/multipart_file.dart' hide MultipartFile;
 import 'package:erp_admin/module/expense/model/all_expense_model.dart';
 import 'package:erp_admin/module/expense/model/expense_category.dart';
 import 'package:erp_admin/module/expense/model/fund_request_model.dart';
@@ -39,21 +40,17 @@ class ExpenseController extends GetxController {
   }
 
   Future<void> createExpense({
-    required int categoryId,
+      required int categoryId,
     required String description,
-    required double amount,
-    required double taxRate,
-    required bool isTaxable,
-    File? document,
+    required List<Map<String, dynamic>> items,
+     required Map<String,MultipartFile> files,
   }) async {
     isLoading.value = true;
 
-    final result = await expenseRepo.createExpense(
+final result = await expenseRepo.createExpense(
       description: description,
-      amount: amount,
-      taxRate: taxRate,
-      isTaxable: isTaxable,
-      document: document,
+      items: items,
+      files: files,
       categoryId: categoryId
     );
 
@@ -73,11 +70,8 @@ class ExpenseController extends GetxController {
       isFetching.value = true;
       final result = await expenseRepo.fetchExpenses();
 
-      if (result.success) {
+      if (result.success!) {
         expenseList.value = result;
-      } else {
-        expenseList.value = ExpenseResponse(success: false, data: []);
-        Fluttertoast.showToast(msg: "Failed to fetch expenses ❌");
       }
     } catch (e) {
       expenseList.value = ExpenseResponse(success: false, data: []);
@@ -145,6 +139,32 @@ RxBool isFetchingRequests = false.obs;
     isFetchingRequests.value = false;
   }
 }
+ // ✅ Update Fund Request Status (e.g. "received")
+  Future<void> updateStatus({
+    required int id,
+    required String status,
+  }) async {
+    try {
+      isLoading.value = true;
 
+      final response = await expenseRepo.updateStatus(id: id, status: status);
 
+      if (response.statusCode == 200 &&
+          (response.body['success'] == true ||
+           response.body['message']?.toString().contains("updated") == true)) {
+        Fluttertoast.showToast(msg: "Status updated to $status ✅");
+
+        // Refresh the fund request list after updating
+        await fetchMyFundRequests();
+      } else {
+        Fluttertoast.showToast(
+          msg: "Failed to update status ❌ (${response.statusCode})",
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error updating status: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:erp_admin/module/EmployeeList&Profile/Screens/employeeLeavesscreen.dart';
+import 'package:erp_admin/module/EmployeeList&Profile/Screens/employeeattendencescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart'; // for formatting date+time
@@ -113,7 +114,17 @@ class ListWidget extends StatelessWidget {
                         } else {
                           Get.snackbar("Error", "Employee ID not available");
                         }
-                      } else if (value == "terminate") {
+                      } else if (value == "view_attendance") {
+  if (employee.employeeId != null) {
+    Get.to(() => EmployeeAttendanceScreen(
+      empId: employee.employeeId.toString(),
+    ));
+  } else {
+    Get.snackbar("Error", "Employee ID not available");
+  }
+}
+
+                      else if (value == "terminate") {
                         _showTerminationDialog(context, controller, employee);
                       } else if (value == "resign") {
                         _showResignationDialog(context, controller, employee);
@@ -216,6 +227,20 @@ class ListWidget extends StatelessWidget {
                             Icon(Icons.rule_outlined, color: Colors.grey),
                             SizedBox(width: 8),
                             Text("Manage Leave"),
+                          ],
+                        ),
+                      ),
+
+                      const PopupMenuItem(
+                        value: "view_attendance",
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_month,
+                              color: Colors.blueAccent,
+                            ),
+                            SizedBox(width: 8),
+                            Text("View Attendance"),
                           ],
                         ),
                       ),
