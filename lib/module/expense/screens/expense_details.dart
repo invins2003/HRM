@@ -11,28 +11,43 @@ class ExpenseDetailsScreen extends StatelessWidget {
   final Expense expense;
   final RxList<ExpenseCategory> categoryList;
 
-  const ExpenseDetailsScreen({super.key, required this.expense, required this.categoryList});
+  const ExpenseDetailsScreen({
+    super.key,
+    required this.expense,
+    required this.categoryList,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final categoryName = categoryList
-        .firstWhere(
-          (cat) => cat.id == expense.categoryId,
-          orElse: () => ExpenseCategory(
-              id: 0, name: "Not Available", createdBy: 1, isDeleted: false, createdAt: "1", updatedAt: "1"),
-        )
-        .name;
+    final categoryName =
+        categoryList
+            .firstWhere(
+              (cat) => cat.id == expense.categoryId,
+              orElse: () => ExpenseCategory(
+                id: 0,
+                name: "Not Available",
+                createdBy: 1,
+                isDeleted: false,
+                createdAt: "1",
+                updatedAt: "1",
+              ),
+            )
+            .name ??
+        "Not Available";
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Expense Details", style: TextStyle(color: Colors.black87)),
+        title: const Text(
+          "Expense Details",
+          style: TextStyle(color: Colors.black87),
+        ),
         backgroundColor: Colors.grey[100],
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -40,6 +55,9 @@ class ExpenseDetailsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildDetailsCard(context, categoryName),
             const SizedBox(height: 24),
+            if (expense.items != null && expense.items!.isNotEmpty)
+              _buildItemsCard(context),
+            const SizedBox(height: 24), // Added padding at the bottom
           ],
         ),
       ),
@@ -70,11 +88,18 @@ class ExpenseDetailsScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Total Amount", style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const Text(
+                "Total Amount",
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
               const SizedBox(height: 8),
               Text(
-                "₹${expense.totalAmount.toStringAsFixed(2)}",
-                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                "₹${expense.totalAmount?.toStringAsFixed(2) ?? "0.00"}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -85,9 +110,9 @@ class ExpenseDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildStatusBadge() {
+    final status = expense.paymentsStatus?.toLowerCase() ?? "";
     Color badgeColor;
     IconData badgeIcon;
-    String status = expense.paymentsStatus.toLowerCase();
 
     switch (status) {
       case "paid":
@@ -95,15 +120,15 @@ class ExpenseDetailsScreen extends StatelessWidget {
         badgeIcon = Icons.check_circle;
         break;
       case "pending":
-        badgeColor = Colors.orange;
+        badgeColor = Colors.orange.shade700; // Made orange stronger
         badgeIcon = Icons.hourglass_top;
         break;
       case "rejected":
-        badgeColor = Colors.red;
+        badgeColor = Colors.red.shade700; // Made red stronger
         badgeIcon = Icons.cancel;
         break;
       default:
-        badgeColor = Colors.grey;
+        badgeColor = Colors.grey.shade600;
         badgeIcon = Icons.info;
     }
 
@@ -112,15 +137,25 @@ class ExpenseDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: badgeColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: badgeColor.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+            color: badgeColor.withOpacity(0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Icon(badgeIcon, color: Colors.white, size: 16),
           const SizedBox(width: 6),
           Text(
-            expense.paymentsStatus.toUpperCase(),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+            expense.paymentsStatus?.toUpperCase() ?? "N/A",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -135,142 +170,283 @@ class ExpenseDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
       child: Column(
         children: [
-          _detailRow(context: context,   icon: Icons.category, title: "Category", value: categoryName),
+          _detailRow(
+            context: context,
+            icon: Icons.confirmation_num_outlined, // Changed to outlined
+            title: "Expense ID",
+            value: expense.id?.toString() ?? "N/A",
+          ),
           _divider(),
-          _detailRow(context: context,  icon: Icons.description_outlined, title: "Description", value: expense.description),
+          _detailRow(
+            context: context,
+            icon: Icons.category_outlined, // Changed to outlined
+            title: "Category",
+            value: categoryName,
+          ),
           _divider(),
-          _detailRow(context: context,   icon: Icons.person_outline, title: "Paid By", value: expense.creator.name),
+          _detailRow(
+            context: context,
+            icon: Icons.store_outlined, // Changed to outlined
+            title: "Branch",
+            value: expense.branch?.name ?? "N/A",
+          ),
+          _divider(),
+          _detailRow(
+            context: context,
+            icon: Icons.person_outline,
+            title: "Paid By",
+            value: expense.creator?.name ?? "N/A",
+          ),
           _divider(),
           _detailRow(
             context: context,
             icon: Icons.calendar_today_outlined,
             title: "Payment Date",
-            value: expense.paymentDate.isNotEmpty
-                ? formatter.format(DateTime.parse(expense.paymentDate))
+            value:
+                (expense.paymentDate != null && expense.paymentDate!.isNotEmpty)
+                ? formatter.format(DateTime.parse(expense.paymentDate!))
                 : "N/A",
           ),
           _divider(),
-          _detailRow(context: context,  icon: Icons.receipt_long_outlined, title: "Subtotal", value: "₹${expense.subtotal.toStringAsFixed(2)}"),
-          _divider(),
-          _detailRow(context: context,   icon: Icons.calculate_outlined, title: "Tax Total", value: "₹${expense.taxTotal.toStringAsFixed(2)}"),
-          _divider(),
-          _detailRow(context: context,   icon: Icons.store_outlined, title: "Branch", value: expense.branch.name),
+          _detailRow(
+            context: context,
+            icon: Icons.description_outlined,
+            title: "Description",
+            value: expense.description ?? "N/A",
+          ),
           _divider(),
           _detailRow(
             context: context,
-            icon: Icons.attach_file_outlined,
-            title: "Document",
-            value: expense.document != null ? "Attached" : "No document",
-            isLink: expense.document != null,
-            onTap: () {
-              if (expense.document != null && expense.document!.isNotEmpty) {
-                final url = expense.document!.startsWith("http")
-                    ? expense.document!
-                    : "${Constants.BASEURL}/${expense.document}";
-                final ext = url.split('.').last.toLowerCase();
-
-                if (ext == 'pdf') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => PDFViewerScreen(url: url)));
-                } else if (ext == 'jpg' || ext == 'jpeg' || ext == 'png') {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ImageViewerScreen(url: url)));
-                } else {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text("Unsupported document type")));
-                }
-              }
-            },
-            builder: (context, value, isLink) {
-              if (!isLink) return Text(value, style: const TextStyle(color: Colors.black87));
-
-              return Center(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (expense.document != null && expense.document!.isNotEmpty) {
-                      final url = expense.document!.startsWith("http")
-                          ? expense.document!
-                          : "${Constants.BASEURL}/${expense.document}";
-                      final ext = url.split('.').last.toLowerCase();
-
-                      if (ext == 'pdf') {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => PDFViewerScreen(url: url)));
-                      } else if (ext == 'jpg' || ext == 'jpeg' || ext == 'png') {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ImageViewerScreen(url: url)));
-                      } else {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(content: Text("Unsupported document type")));
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.remove_red_eye, size: 18),
-                  label: const Text("View Document"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    textStyle: const TextStyle(fontSize: 14),
-                  ),
-                ),
-              );
-            },
+            icon: Icons.receipt_long_outlined,
+            title: "Subtotal",
+            value: "₹${expense.subtotal?.toStringAsFixed(2) ?? "0.00"}",
+          ),
+          _divider(),
+          _detailRow(
+            context: context,
+            icon: Icons.calculate_outlined,
+            title: "Tax Total",
+            value: "₹${expense.taxTotal?.toStringAsFixed(2) ?? "0.00"}",
           ),
         ],
       ),
     );
   }
 
-  Widget _divider() {
-    return Divider(color: Colors.grey.shade200, height: 1, indent: 16, endIndent: 16);
+  // --- REFACTORED THIS WIDGET ---
+  Widget _buildItemsCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              "Items",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ...expense.items!.map((item) {
+            final taxString = item.isTaxable == true
+                ? "Tax: ${item.taxType ?? "-"} (${item.taxRate?.toStringAsFixed(2) ?? "0"}%)"
+                : "No Tax";
+            final subtotalString =
+                "Subtotal: ₹${item.subtotal?.toStringAsFixed(2) ?? "0.00"}";
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.label_outline, color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.itemName ?? "N/A",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          "₹${item.totalAmount?.toStringAsFixed(2) ?? "0.00"}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          subtotalString,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          taxString,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (item.document != null && item.document!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: SizedBox(
+                          width: double.infinity, // Full width button
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _openDocument(context, item.document),
+                            icon: const Icon(Icons.remove_red_eye, size: 18),
+                            label: const Text("View Document"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              textStyle: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 
+  Widget _divider() => Divider(
+    color: Colors.grey.shade200,
+    height: 1,
+    indent: 16,
+    endIndent: 16,
+  );
+
+  // --- CORRECTED THIS WIDGET ---
+  // --- CORRECTED THIS WIDGET AGAIN ---
   Widget _detailRow({
-  required BuildContext context,
-  required IconData icon,
-  required String title,
-  required String value,
-  bool isLink = false,
-  VoidCallback? onTap,
-  Widget Function(BuildContext context, String value, bool isLink)? builder,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: Colors.grey.shade500, size: 20),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Text(
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isLink = false,
+    VoidCallback? onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.grey.shade500, size: 20),
+          const SizedBox(width: 16),
+          Text(
             title,
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
-        ),
-        const SizedBox(width: 16),
-        // Remove Expanded here
-        builder != null
-            ? builder(context, value, isLink)
-            : GestureDetector(
+          const SizedBox(width: 16),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
                 onTap: isLink ? onTap : null,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isLink ? Colors.green : Colors.black87,
-                      decoration: isLink ? TextDecoration.underline : TextDecoration.none,
-                      decorationColor: Colors.green,
-                    ),
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: isLink ? Colors.green.shade700 : Colors.black87,
+                    decoration: isLink
+                        ? TextDecoration.underline
+                        : TextDecoration.none,
+                    decorationColor: Colors.green.shade700,
                   ),
                 ),
               ),
-      ],
-    ),
-  );
-}
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openDocument(BuildContext context, String? doc) {
+    if (doc == null || doc.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Document not found.")));
+      return;
+    }
+
+    final url = doc.startsWith("http") ? doc : "${Constants.BASEURL}/$doc";
+    final ext = url.split('.').last.toLowerCase();
+
+    if (ext == 'pdf') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PDFViewerScreen(url: url)),
+      );
+    } else if (['jpg', 'jpeg', 'png'].contains(ext)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ImageViewerScreen(url: url)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unsupported document type")),
+      );
+    }
+  }
 }

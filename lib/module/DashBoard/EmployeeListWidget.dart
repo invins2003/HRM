@@ -161,20 +161,23 @@ import 'package:erp_admin/module/DashBoard/Model/present_employee_model.dart';
 import 'package:get/get.dart';
 
 class EmployeeListWidget extends StatelessWidget {
-  final List<AttendanceData> employeelist;
+  final List<AttendanceData> presentemployeelist;
 
-  const EmployeeListWidget({super.key, required this.employeelist});
+  const EmployeeListWidget({super.key, required this.presentemployeelist});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<DashBoardEmployeeList>();
 
     // ✅ Count totals
-    final totalEmployees = employeelist.length;
-    final totalPresent = employeelist
+    final totalEmployees = controller.employeelisttt
+        .where((e) => (e.isActive == true))
+        .length
+        .toString();
+    final totalPresent = presentemployeelist
         .where((e) => (e.status?.toLowerCase() ?? '') == 'present')
         .length;
-    final totalAbsent = employeelist
+    final totalAbsent = presentemployeelist
         .where((e) => (e.status?.toLowerCase() ?? '') == 'absent')
         .length;
 
@@ -193,7 +196,7 @@ class EmployeeListWidget extends StatelessWidget {
           ),
         ),
 
-        // ✅ Summary Cards Row
+        // ✅ Summary Cards Row Total , Present , Absent  Cards
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
           child: Row(
@@ -225,7 +228,7 @@ class EmployeeListWidget extends StatelessWidget {
 
         // ✅ Employee List Section
         Expanded(
-          child: employeelist.isEmpty
+          child: presentemployeelist.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -262,11 +265,11 @@ class EmployeeListWidget extends StatelessWidget {
                   ),
                 )
               : ListView.separated(
-                  itemCount: employeelist.length,
+                  itemCount: presentemployeelist.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 1),
                   itemBuilder: (context, index) {
-                    final employee = employeelist[index];
+                    final employee = presentemployeelist[index];
                     final status = employee.status?.toLowerCase() ?? "absent";
                     final isPresent = status == "present";
 
