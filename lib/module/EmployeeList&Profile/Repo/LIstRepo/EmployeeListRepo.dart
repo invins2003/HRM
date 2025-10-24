@@ -206,4 +206,17 @@ class EmployeeListRepo extends GetxController implements GetxService {
       );
     }
   }
+
+  Future<Response> getEmployeeAttendance({
+  required String empId,
+  required int month,
+  required int year,
+}) async {
+  debugPrint(
+      "ApiClient.getData ---> ${Constants.VIEWATTENDENCEDETAIL}$empId?month=$month&year=$year");
+
+  return await apiClient.getData(
+    "${Constants.VIEWATTENDENCEDETAIL}$empId?month=$month&year=$year",
+  );
+}
 }

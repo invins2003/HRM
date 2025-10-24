@@ -196,7 +196,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           await controller.listtController();
           await controller.presentListtController(selectedDate);
         },
-        child: EmployeeListWidget(employeelist: controller.attendanceList),
+        child: EmployeeListWidget(presentemployeelist: controller.attendanceList),
       );
     });
   }
@@ -242,8 +242,11 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   void _showEmployeeSearchDialog(BuildContext context) {
     final searchController = TextEditingController();
     List<Data> filteredList = controller.employeelisttt
-        .where((emp) => emp.isActive == true)
-        .toList();
+    .where((emp) =>
+        emp.isActive == true &&
+        (emp.biometricEmpId == null ||
+         emp.biometricEmpId!.isEmpty))
+    .toList();
 
     showDialog(
       context: context,
