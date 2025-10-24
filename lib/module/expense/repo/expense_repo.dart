@@ -62,13 +62,13 @@ Future<ExpenseModel?> createExpense({
       return ExpenseModel.fromJson(response.body);
     } else {
       return ExpenseModel(
-        success: false,
-        message: "Failed with status: ${response.statusCode}",
+        success: response.body['success'],
+        message: "${response.body["message"]}",
       );
     }
   } catch (e) {
     print("Error in createExpense: $e");
-    return ExpenseModel(success: false, message: e.toString());
+    return ExpenseModel(success: false, message:e.toString() );
   }
 }
 

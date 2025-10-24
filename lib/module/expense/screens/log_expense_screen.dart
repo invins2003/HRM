@@ -4,7 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:http_parser/http_parser.dart';
+import 'package:open_filex/open_filex.dart'; // <-- 1. ADD THIS IMPORT
+
 class LogExpenseScreen extends StatefulWidget {
   const LogExpenseScreen({super.key});
 
@@ -42,18 +43,35 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     }
   }
 
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-    );
+  // --- Replace your _pickFile() with this version ---
+Future<void> _pickFile() async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+  );
 
-    if (result != null) {
-      setState(() {
-        selectedDocument = File(result.files.single.path!);
-      });
+  if (result != null && result.files.single.path != null) {
+    final pickedFile = File(result.files.single.path!);
+    final fileSizeBytes = await pickedFile.length();
+    final fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+    // Check file size limit (5 MB)
+    if (fileSizeMB > 5) {
+      Get.snackbar(
+        "File Too Large",
+        "Please select a file smaller than 5 MB.",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
+      return;
     }
+
+    setState(() {
+      selectedDocument = pickedFile;
+    });
   }
+}
+
 
   void _addItem() {
     if (itemNameController.text.isEmpty || subtotalController.text.isEmpty) {
@@ -99,68 +117,84 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     });
   }
 
-
-Future<void> _submitExpense() async {
-  if (descriptionController.text.isEmpty || selectedCategoryId == null) {
-    Get.snackbar("Error", "Please enter description and select category",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900);
-    return;
+  // --- 2. ADD THIS HELPER FUNCTION ---
+  Future<void> _openSelectedFile(File? file) async {
+    if (file == null) {
+      Get.snackbar("No File", "There is no file to open.",
+          backgroundColor: Colors.orange.withOpacity(0.1),
+          colorText: Colors.orange.shade900);
+      return;
+    }
+    if (await file.exists()) {
+      await OpenFilex.open(file.path);
+    } else {
+      Get.snackbar("Error", "File not found.",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900);
+    }
   }
+  // ------------------------------------
 
-  if (items.isEmpty) {
-    Get.snackbar("Error", "Please add at least one item",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900);
-    return;
-  }
-
-  List<Map<String, dynamic>> itemsData = [];
-  Map<String, MultipartFile> fileMap = {};
-
-  for (int i = 0; i < items.length; i++) {
-    final item = items[i];
-    Map<String, dynamic> map = {
-      "item_name": item.itemName,
-      "subtotal": item.subtotal,
-      "is_taxable": item.isTaxable,
-    };
-
-    if (item.isTaxable) {
-      map["tax_rate"] = item.taxRate;
-      map["tax_type"] = item.taxType;
+  Future<void> _submitExpense() async {
+    if (descriptionController.text.isEmpty || selectedCategoryId == null) {
+      Get.snackbar("Error", "Please enter description and select category",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900);
+      return;
     }
 
-    if (item.document != null) {
-      fileMap["item_document_$i"] = MultipartFile(
-        item.document!,
-        filename: item.document!.path.split('/').last,
-        contentType: lookupMimeType(item.document!.path).toString(), // just string like "image/png" or "application/pdf"
-      );
+    if (items.isEmpty) {
+      Get.snackbar("Error", "Please add at least one item",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900);
+      return;
     }
 
-    itemsData.add(map);
+    List<Map<String, dynamic>> itemsData = [];
+    Map<String, MultipartFile> fileMap = {};
+
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      Map<String, dynamic> map = {
+        "item_name": item.itemName,
+        "subtotal": item.subtotal,
+        "is_taxable": item.isTaxable,
+      };
+
+      if (item.isTaxable) {
+        map["tax_rate"] = item.taxRate;
+        map["tax_type"] = item.taxType;
+      }
+
+      if (item.document != null) {
+        final mimeType =
+            lookupMimeType(item.document!.path) ?? 'application/octet-stream';
+
+        fileMap["item_document_$i"] = MultipartFile(
+          item.document!,
+          filename: item.document!.path.split('/').last,
+          contentType: mimeType,
+        );
+      }
+
+      itemsData.add(map);
+    }
+
+    await expenseController.createExpense(
+      categoryId: selectedCategoryId!,
+      description: descriptionController.text,
+      items: itemsData,
+      files: fileMap,
+    );
+
+    if (expenseController.expenseResponse.value?.success == true) {
+      Get.snackbar("Success", "Expense logged successfully ✅",
+          backgroundColor: Colors.green.withOpacity(0.2),
+          colorText: Colors.green.shade800);
+      Navigator.pop(context, true);
+    }
   }
 
-  await expenseController.createExpense(
-    categoryId: selectedCategoryId!,
-    description: descriptionController.text,
-    items: itemsData,
-    files: fileMap,
-  );
-
-  if (expenseController.expenseResponse.value?.success == true) {
-    Get.snackbar("Success", "Expense logged successfully ✅",
-        backgroundColor: Colors.green.withOpacity(0.2),
-        colorText: Colors.green.shade800);
-    Navigator.pop(context, true);
-  }
-}
-
-
-
-
-  // --- Reusable Input Decoration ---
   InputDecoration _buildInputDecoration(
       {required String labelText, required IconData icon}) {
     return InputDecoration(
@@ -182,40 +216,56 @@ Future<void> _submitExpense() async {
       ),
     );
   }
-  // ---------------------------------
 
-  // --- NEW: Helper for building document preview ---
   Widget _buildDocumentPreview(File? document) {
-    return SizedBox(
-      width: 50,
-      height: 50,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          color: Colors.grey.shade100, // Background for icons
-          alignment: Alignment.center,
-          child: () {
-            if (document == null) {
-              return const Icon(Icons.insert_drive_file_outlined,
-                  color: Colors.grey);
-            }
-            if (document.path.endsWith(".pdf")) {
-              return const Icon(Icons.picture_as_pdf,
-                  color: Colors.red, size: 30);
-            }
-            // It's an image
-            return Image.file(
-              document,
-              fit: BoxFit.cover,
-              width: 50,
-              height: 50,
-            );
-          }(),
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: 50,
+        height: 50,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            color: Colors.grey.shade100,
+            alignment: Alignment.center,
+            child: () {
+              if (document == null) {
+                return const Icon(Icons.insert_drive_file_outlined,
+                    color: Colors.grey);
+              }
+              if (document.path.endsWith(".pdf")) {
+                return const Icon(Icons.picture_as_pdf,
+                    color: Colors.red, size: 30);
+              }
+              return Image.file(
+                document,
+                fit: BoxFit.cover,
+                width: 50,
+                height: 50,
+              );
+            }(),
+          ),
         ),
       ),
-    );
-  }
-  // ---------------------------------
+      const SizedBox(height: 4),
+      // --- File size text (only if file selected)
+      if (document != null)
+        Text(
+          _getReadableFileSize(document),
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+          textAlign: TextAlign.center,
+        ),
+    ],
+  );
+}
+
+
+  String _getReadableFileSize(File file) {
+  final bytes = file.lengthSync();
+  final mb = bytes / (1024 * 1024);
+  return "${mb.toStringAsFixed(2)} MB / 5 MB";
+}
 
   @override
   Widget build(BuildContext context) {
@@ -352,30 +402,46 @@ Future<void> _submitExpense() async {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16), // Added space
+                      const SizedBox(height: 16),
 
-                      // Attach Document Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton.icon(
-                          onPressed: _pickFile,
-                          icon: const Icon(Icons.attach_file),
-                          label: Text(
-                            selectedDocument == null
-                                ? "Attach Document (Optional)"
-                                : "Attached: ${selectedDocument!.path.split('/').last}",
-                            overflow: TextOverflow.ellipsis,
+                      // --- 3. MAKE THIS PREVIEW CLICKABLE ---
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // 1. The preview (now clickable)
+                          InkWell(
+                            onTap: () => _openSelectedFile(selectedDocument),
+                            borderRadius: BorderRadius.circular(8),
+                            child: _buildDocumentPreview(selectedDocument),
                           ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.green.shade800,
-                            backgroundColor: Colors.green.shade100,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                          const SizedBox(width: 12),
+
+                          // 2. The button, expanded to fill space
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: _pickFile,
+                              icon: const Icon(Icons.attach_file),
+                              label: Text(
+                                selectedDocument == null
+                                    ? "Attach Document (Optional)"
+                                    : "Attached: ${selectedDocument!.path.split('/').last}",
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.green.shade800,
+                                backgroundColor: Colors.green.shade100,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                        ),
+                        ],
                       ),
+                      // --- END MODIFICATION ---
+
                       const SizedBox(height: 12),
 
                       // Add Item Button
@@ -424,7 +490,12 @@ Future<void> _submitExpense() async {
                               borderRadius: BorderRadius.circular(12)),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
-                            leading: _buildDocumentPreview(item.document),
+                            // --- 3. MAKE THIS PREVIEW CLICKABLE ---
+                            leading: InkWell(
+                              onTap: () => _openSelectedFile(item.document),
+                              borderRadius: BorderRadius.circular(8),
+                              child: _buildDocumentPreview(item.document),
+                            ),
                             title: Text(
                               item.itemName,
                               style:
