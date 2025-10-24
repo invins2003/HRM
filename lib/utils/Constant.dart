@@ -29,7 +29,7 @@ class Constants {
   static const String TOGGLEATTENDENCE = "/api/attendance/status/";
   static const String DELETEEMPLOYEEATTENDENCE = "/api/attendance";
   static const String DELETEEMPLOYEE = "/api/employees";
-
+  static const String VIEWATTENDENCEDETAIL = "/api/attendance/attendance-summary/";
 
 // Employee Leave
 static const String EMPLOYEELEAVETYPE = "/api/leave-types";
@@ -53,8 +53,12 @@ static const String GETEXPENSE = "/api/expense";
 static const String GETBALANCE = "/api/branch-wallets";
 static const String FUNDREQUEST ="/api/fund-request" ;
 static const String MYFUNDREQUEST ="/api/fund-request/my" ;
+static const String STATUSUPDATE ="/api/fund-request" ;
 
 // PROFILE
 static const String MYPROFILE = "/api/profile";
+
+
+
 
 }

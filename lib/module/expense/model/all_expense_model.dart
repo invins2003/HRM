@@ -1,97 +1,158 @@
 // lib/module/expense/model/expense_model.dart
 class ExpenseResponse {
-  bool success;
-  List<Expense> data;
+  bool? success;
+  List<Expense>? data;
 
-  ExpenseResponse({required this.success, required this.data});
+  ExpenseResponse({this.success, this.data});
 
   factory ExpenseResponse.fromJson(Map<String, dynamic> json) {
     return ExpenseResponse(
-      success: json['success'] ?? false,
+      success: json['success'],
       data: json['data'] != null
           ? List<Expense>.from(json['data'].map((x) => Expense.fromJson(x)))
-          : [],
+          : null,
     );
   }
 }
 
 class Expense {
-  int id;
-  int branchId;
-  String paymentDate;
-  double subtotal;
-  double taxTotal;
-  double totalAmount;
-  String paymentsStatus;
-  int createdBy;
+  int? id;
+  int? branchId;
+  int? employeeId;
+  String? paymentDate;
+  double? subtotal;
+  double? taxTotal;
+  double? totalAmount;
+  String? paymentsStatus;
+  int? createdBy;
   int? categoryId;
-  String description;
+  String? description;
   String? document;
-  bool isDeleted;
-  String createdAt;
-  String updatedAt;
-  Creator creator;
-  Branch branch;
+  bool? isDeleted;
+  String? createdAt;
+  String? updatedAt;
+  Creator? creator;
+  Branch? branch;
+  List<Item>? items;
 
   Expense({
-    required this.id,
-    required this.branchId,
-    required this.paymentDate,
-    required this.subtotal,
-    required this.taxTotal,
-    required this.totalAmount,
-    required this.paymentsStatus,
-    required this.createdBy,
+    this.id,
+    this.branchId,
+    this.employeeId,
+    this.paymentDate,
+    this.subtotal,
+    this.taxTotal,
+    this.totalAmount,
+    this.paymentsStatus,
+    this.createdBy,
     this.categoryId,
-    required this.description,
+    this.description,
     this.document,
-    required this.isDeleted,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.creator,
-    required this.branch,
+    this.isDeleted,
+    this.createdAt,
+    this.updatedAt,
+    this.creator,
+    this.branch,
+    this.items,
   });
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
       id: json['id'],
       branchId: json['branch_id'],
+      employeeId: json['employee_id'],
       paymentDate: json['payment_date'],
-      subtotal: double.tryParse(json['subtotal'].toString()) ?? 0.0,
-      taxTotal: double.tryParse(json['tax_total'].toString()) ?? 0.0,
-      totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0.0,
+      subtotal: json['subtotal'] != null ? double.tryParse(json['subtotal'].toString()) : null,
+      taxTotal: json['tax_total'] != null ? double.tryParse(json['tax_total'].toString()) : null,
+      totalAmount: json['total_amount'] != null ? double.tryParse(json['total_amount'].toString()) : null,
       paymentsStatus: json['payments_status'],
       createdBy: json['created_by'],
       categoryId: json['category_id'],
-      description: json['description'] ?? '',
+      description: json['description'],
       document: json['document'],
-      isDeleted: json['is_deleted'] ?? false,
+      isDeleted: json['is_deleted'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
-      creator: Creator.fromJson(json['creator']),
-      branch: Branch.fromJson(json['branch']),
+      creator: json['creator'] != null ? Creator.fromJson(json['creator']) : null,
+      branch: json['branch'] != null ? Branch.fromJson(json['branch']) : null,
+      items: json['items'] != null
+          ? List<Item>.from(json['items'].map((x) => Item.fromJson(x)))
+          : null,
     );
   }
 }
 
 class Creator {
-  int id;
-  String name;
+  int? id;
+  String? name;
 
-  Creator({required this.id, required this.name});
+  Creator({this.id, this.name});
 
   factory Creator.fromJson(Map<String, dynamic> json) {
-    return Creator(id: json['id'], name: json['name']);
+    return Creator(
+      id: json['id'],
+      name: json['name'],
+    );
   }
 }
 
 class Branch {
-  int id;
-  String name;
+  int? id;
+  String? name;
 
-  Branch({required this.id, required this.name});
+  Branch({this.id, this.name});
 
   factory Branch.fromJson(Map<String, dynamic> json) {
-    return Branch(id: json['id'], name: json['name']);
+    return Branch(
+      id: json['id'],
+      name: json['name'],
+    );
+  }
+}
+
+class Item {
+  int? id;
+  int? expenseId;
+  String? itemName;
+  double? subtotal;
+  bool? isTaxable;
+  double? taxRate;
+  String? taxType;
+  double? taxTotal;
+  double? totalAmount;
+  String? document;
+  String? createdAt;
+  String? updatedAt;
+
+  Item({
+    this.id,
+    this.expenseId,
+    this.itemName,
+    this.subtotal,
+    this.isTaxable,
+    this.taxRate,
+    this.taxType,
+    this.taxTotal,
+    this.totalAmount,
+    this.document,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory Item.fromJson(Map<String, dynamic> json) {
+    return Item(
+      id: json['id'],
+      expenseId: json['expense_id'],
+      itemName: json['item_name'],
+      subtotal: json['subtotal'] != null ? double.tryParse(json['subtotal'].toString()) : null,
+      isTaxable: json['is_taxable'],
+      taxRate: json['tax_rate'] != null ? double.tryParse(json['tax_rate'].toString()) : null,
+      taxType: json['tax_type'],
+      taxTotal: json['tax_total'] != null ? double.tryParse(json['tax_total'].toString()) : null,
+      totalAmount: json['total_amount'] != null ? double.tryParse(json['total_amount'].toString()) : null,
+      document: json['document'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+    );
   }
 }
