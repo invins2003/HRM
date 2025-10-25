@@ -32,8 +32,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
                 updatedAt: "1",
               ),
             )
-            .name ??
-        "Not Available";
+            .name;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -103,6 +102,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
               ),
             ],
           ),
+          if(expense.paymentsStatus != null)
           Positioned(top: -12, right: -12, child: _buildStatusBadge()),
         ],
       ),
@@ -162,8 +162,117 @@ class ExpenseDetailsScreen extends StatelessWidget {
     );
   }
 
+  // --- REFACTORED THIS WIDGET ---
   Widget _buildDetailsCard(BuildContext context, String categoryName) {
     final formatter = DateFormat('dd MMM yyyy, hh:mm a');
+    final List<Widget> detailWidgets = [];
+
+    // Helper to add row with divider if list is not empty
+    void addDetailRow(Widget row) {
+      if (detailWidgets.isNotEmpty) {
+        detailWidgets.add(_divider());
+      }
+      detailWidgets.add(row);
+    }
+
+    // --- Expense ID ---
+    if (expense.id != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.confirmation_num_outlined, // Changed to outlined
+        title: "Expense ID",
+        value: expense.id.toString(),
+      ));
+    }
+
+ if (expense.vendorname != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.man, // Changed to outlined
+        title: "Vendor Name",
+        value: expense.vendorname.toString(),
+      ));
+    }
+
+     if (expense.typeOfSupplOrService != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.money, // Changed to outlined
+        title: "Purchase Type",
+        value: expense.typeOfSupplOrService.toString(),
+      ));
+    }
+
+
+    // --- Category ---
+    if (categoryName != "Not Available") {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.category_outlined, // Changed to outlined
+        title: "Category",
+        value: categoryName,
+      ));
+    }
+
+    // --- Branch ---
+    if (expense.branch?.name != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.store_outlined, // Changed to outlined
+        title: "Branch",
+        value: expense.branch!.name!,
+      ));
+    }
+
+    // --- Paid By ---
+    if (expense.creator?.name != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.person_outline,
+        title: "Paid By",
+        value: expense.creator!.name!,
+      ));
+    }
+
+    // --- Payment Date ---
+    if (expense.paymentDate != null && expense.paymentDate!.isNotEmpty) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.calendar_today_outlined,
+        title: "Payment Date",
+        value: formatter.format(DateTime.parse(expense.paymentDate!)),
+      ));
+    }
+
+    // --- Description ---
+    if (expense.description != null && expense.description!.isNotEmpty) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.description_outlined,
+        title: "Description",
+        value: expense.description!,
+      ));
+    }
+
+    // --- Subtotal ---
+    if (expense.subtotal != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.receipt_long_outlined,
+        title: "Subtotal",
+        value: "₹${expense.subtotal!.toStringAsFixed(2)}",
+      ));
+    }
+
+    // --- Tax Total ---
+    if (expense.taxTotal != null) {
+      addDetailRow(_detailRow(
+        context: context,
+        icon: Icons.calculate_outlined,
+        title: "Tax Total",
+        value: "₹${expense.taxTotal!.toStringAsFixed(2)}",
+      ));
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -175,66 +284,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        children: [
-          _detailRow(
-            context: context,
-            icon: Icons.confirmation_num_outlined, // Changed to outlined
-            title: "Expense ID",
-            value: expense.id?.toString() ?? "N/A",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.category_outlined, // Changed to outlined
-            title: "Category",
-            value: categoryName,
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.store_outlined, // Changed to outlined
-            title: "Branch",
-            value: expense.branch?.name ?? "N/A",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.person_outline,
-            title: "Paid By",
-            value: expense.creator?.name ?? "N/A",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.calendar_today_outlined,
-            title: "Payment Date",
-            value:
-                (expense.paymentDate != null && expense.paymentDate!.isNotEmpty)
-                ? formatter.format(DateTime.parse(expense.paymentDate!))
-                : "N/A",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.description_outlined,
-            title: "Description",
-            value: expense.description ?? "N/A",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.receipt_long_outlined,
-            title: "Subtotal",
-            value: "₹${expense.subtotal?.toStringAsFixed(2) ?? "0.00"}",
-          ),
-          _divider(),
-          _detailRow(
-            context: context,
-            icon: Icons.calculate_outlined,
-            title: "Tax Total",
-            value: "₹${expense.taxTotal?.toStringAsFixed(2) ?? "0.00"}",
-          ),
-        ],
+        children: detailWidgets,
       ),
     );
   }
@@ -368,11 +418,11 @@ class ExpenseDetailsScreen extends StatelessWidget {
   }
 
   Widget _divider() => Divider(
-    color: Colors.grey.shade200,
-    height: 1,
-    indent: 16,
-    endIndent: 16,
-  );
+        color: Colors.grey.shade200,
+        height: 1,
+        indent: 16,
+        endIndent: 16,
+      );
 
   // --- CORRECTED THIS WIDGET ---
   // --- CORRECTED THIS WIDGET AGAIN ---

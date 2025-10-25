@@ -18,7 +18,7 @@ class ExpenseRepo {
 
   Future<List<ExpenseCategory>> getExpenseCategories() async {
     try {
-      final response = await apiClient.getData("/api/expense-category");
+      final response = await apiClient.getData(Constants.EXPENSECATEGORY);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = response.body;
@@ -41,16 +41,21 @@ Future<ExpenseModel?> createExpense({
   required String description,
   required List<Map<String, dynamic>> items,
   required Map<String, MultipartFile> files,
+  required String purchaseType, 
+  String? vendorName, 
+  String? creditPurchaseType,
 }) async {
   try {
-    // Build the full FormData map
-    final Map<String, dynamic> formMap = {
+
+     if(purchaseType == "Cash Purchase"){
+// Build the full FormData map
+     final Map<String, dynamic> formMap = {
       "category_id": categoryId,
       "description": description,
       "items": jsonEncode(items), // send as JSON string
-      ...files, // spread all files: item_document_0, item_document_1, etc.
+      ...files,
+       // spread all files: item_document_0, item_document_1, etc.
     };
-
     final formData = FormData(formMap);
 
     final response = await apiClient.postDataWithFile(
@@ -58,7 +63,7 @@ Future<ExpenseModel?> createExpense({
       formData,
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
+     if (response.statusCode == 200 || response.statusCode == 201) {
       return ExpenseModel.fromJson(response.body);
     } else {
       return ExpenseModel(
@@ -66,6 +71,39 @@ Future<ExpenseModel?> createExpense({
         message: "${response.body["message"]}",
       );
     }
+     }
+
+     else{
+      final Map<String, dynamic> formMap = {
+      "category_id": categoryId,
+      "description": description,
+      "items": jsonEncode(items), // send as JSON string
+      ...files,
+      "vendor_name":vendorName,
+      "type_of_supply_or_service":creditPurchaseType, 
+      // spread all files: item_document_0, item_document_1, etc.
+    };
+    final formData = FormData(formMap);
+
+    final response = await apiClient.postDataWithFile(
+      Constants.CREDITEXPENSE,
+      formData,
+    );
+
+     if (response.statusCode == 200 || response.statusCode == 201) {
+      return ExpenseModel.fromJson(response.body);
+    } else {
+      return ExpenseModel(
+        success: response.body['success'],
+        message: "${response.body["message"]}",
+      );
+    }
+     }
+    
+
+    
+
+   
   } catch (e) {
     print("Error in createExpense: $e");
     return ExpenseModel(success: false, message:e.toString() );
@@ -78,6 +116,22 @@ Future<ExpenseModel?> createExpense({
    Future<ExpenseResponse> fetchExpenses() async {
     try {
       final response = await apiClient.getData(Constants.GETEXPENSE);
+
+      if (response.statusCode == 200) {
+        return ExpenseResponse.fromJson(response.body);
+      } else {
+        return ExpenseResponse(success: false, data: []);
+      }
+    } catch (e) {
+      print("Error in fetchExpenses: $e");
+      return ExpenseResponse(success: false, data: []);
+    }
+   }
+
+
+   Future<ExpenseResponse> fetchCreditExpenses() async {
+    try {
+      final response = await apiClient.getData(Constants.CREDITEXPENSE);
 
       if (response.statusCode == 200) {
         return ExpenseResponse.fromJson(response.body);
