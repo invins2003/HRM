@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:open_filex/open_filex.dart'; 
+import 'package:open_filex/open_filex.dart';
 
 class LogExpenseScreen extends StatefulWidget {
   const LogExpenseScreen({super.key});
@@ -35,11 +35,12 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
   List<Item> items = [];
 
   double get totalExpense => items.fold(
-      0,
-      (sum, item) =>
-          sum +
-          item.subtotal +
-          (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0));
+        0,
+        (sum, item) =>
+            sum +
+            item.subtotal +
+            (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0),
+      );
 
   @override
   void initState() {
@@ -49,18 +50,18 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     }
   }
 
-  // --- NEW: Dispose new controller ---
+  // --- Dispose controllers ---
   @override
   void dispose() {
     descriptionController.dispose();
     itemNameController.dispose();
     subtotalController.dispose();
     taxRateController.dispose();
-    _vendorNameController.dispose(); // <-- Added
+    _vendorNameController.dispose();
     super.dispose();
   }
-  // -----------------------------------
 
+  // --- File picker with size validation ---
   Future<void> _pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -72,6 +73,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       final fileSizeBytes = await pickedFile.length();
       final fileSizeMB = fileSizeBytes / (1024 * 1024);
 
+      // Check file size limit (5 MB)
       if (fileSizeMB > 5) {
         Get.snackbar(
           "File Too Large",
@@ -90,16 +92,22 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
 
   void _addItem() {
     if (itemNameController.text.isEmpty || subtotalController.text.isEmpty) {
-      Get.snackbar("Error", "Enter item name and subtotal",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Enter item name and subtotal",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
     if (isTaxable && taxRateController.text.isEmpty) {
-      Get.snackbar("Error", "Enter tax rate for taxable item",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Enter tax rate for taxable item",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
@@ -107,16 +115,17 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     double taxRate = double.tryParse(taxRateController.text) ?? 0;
 
     setState(() {
-      items.add(Item(
-        itemName: itemNameController.text,
-        subtotal: subtotal,
-        isTaxable: isTaxable,
-        taxRate: taxRate,
-        document: selectedDocument, // optional for all
-        taxType: taxType,
-      ));
+      items.add(
+        Item(
+          itemName: itemNameController.text,
+          subtotal: subtotal,
+          isTaxable: isTaxable,
+          taxRate: taxRate,
+          document: selectedDocument,
+          taxType: taxType,
+        ),
+      );
 
-      // Reset input fields
       itemNameController.clear();
       subtotalController.clear();
       taxRateController.clear();
@@ -134,44 +143,55 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
 
   Future<void> _openSelectedFile(File? file) async {
     if (file == null) {
-      Get.snackbar("No File", "There is no file to open.",
-          backgroundColor: Colors.orange.withOpacity(0.1),
-          colorText: Colors.orange.shade900);
+      Get.snackbar(
+        "No File",
+        "There is no file to open.",
+        backgroundColor: Colors.orange.withOpacity(0.1),
+        colorText: Colors.orange.shade900,
+      );
       return;
     }
     if (await file.exists()) {
       await OpenFilex.open(file.path);
     } else {
-      Get.snackbar("Error", "File not found.",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "File not found.",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
     }
   }
 
-  // --- MODIFIED: _submitExpense (added validation and new fields) ---
   Future<void> _submitExpense() async {
     if (descriptionController.text.isEmpty || selectedCategoryId == null) {
-      Get.snackbar("Error", "Please enter description and select category",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Please enter description and select category",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
-    // --- NEW: Validation for credit purchase fields ---
     if (_purchaseType == "credit" &&
         (_vendorNameController.text.isEmpty || _creditPurchaseType == null)) {
       Get.snackbar(
-          "Error", "For credit purchase, please enter Vendor Name and Type of Purchase",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+        "Error",
+        "For credit purchase, please enter Vendor Name and Type of Purchase",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
-    // --------------------------------------------------
 
     if (items.isEmpty) {
-      Get.snackbar("Error", "Please add at least one item",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Please add at least one item",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
@@ -205,32 +225,32 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       itemsData.add(map);
     }
 
-    // --- MODIFIED: Pass new data to the controller ---
-    // Note: You will need to update your ExpenseController.createExpense 
-    // method to accept these new parameters.
     await expenseController.createExpense(
       categoryId: selectedCategoryId!,
       description: descriptionController.text,
       items: itemsData,
       files: fileMap,
-      // --- NEW PARAMETERS ---
       purchaseType: _purchaseType,
       vendorName: _purchaseType == "credit" ? _vendorNameController.text : null,
-      creditPurchaseType: _purchaseType == "credit" ? _creditPurchaseType : null,
+      creditPurchaseType:
+          _purchaseType == "credit" ? _creditPurchaseType : null,
     );
-    // -----------------------------------------------
 
     if (expenseController.expenseResponse.value?.success == true) {
-      Get.snackbar("Success", "Expense logged successfully ✅",
-          backgroundColor: Colors.green.withOpacity(0.2),
-          colorText: Colors.green.shade800);
+      Get.snackbar(
+        "Success",
+        "Expense logged successfully ✅",
+        backgroundColor: Colors.green.withOpacity(0.2),
+        colorText: Colors.green.shade800,
+      );
       Navigator.pop(context, true);
     }
   }
-  // --- END MODIFICATION ---
 
-  InputDecoration _buildInputDecoration(
-      {required String labelText, required IconData icon}) {
+  InputDecoration _buildInputDecoration({
+    required String labelText,
+    required IconData icon,
+  }) {
     return InputDecoration(
       labelText: labelText,
       prefixIcon: Icon(icon, color: Colors.green),
@@ -255,30 +275,32 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 50,
-          height: 50,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              color: Colors.grey.shade100,
-              alignment: Alignment.center,
-              child: () {
-                if (document == null) {
-                  return const Icon(Icons.insert_drive_file_outlined,
-                      color: Colors.grey);
-                }
-                if (document.path.endsWith(".pdf")) {
-                  return const Icon(Icons.picture_as_pdf,
-                      color: Colors.red, size: 30);
-                }
-                return Image.file(
-                  document,
-                  fit: BoxFit.cover,
-                  width: 50,
-                  height: 50,
-                );
-              }(),
+        Flexible(
+          child: SizedBox(
+            width: 50,
+            height: 50,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: Colors.grey.shade100,
+                alignment: Alignment.center,
+                child: () {
+                  if (document == null) {
+                    return const Icon(Icons.insert_drive_file_outlined,
+                        color: Colors.grey);
+                  }
+                  if (document.path.endsWith(".pdf")) {
+                    return const Icon(Icons.picture_as_pdf,
+                        color: Colors.red, size: 30);
+                  }
+                  return Image.file(
+                    document,
+                    fit: BoxFit.cover,
+                    width: 50,
+                    height: 50,
+                  );
+                }(),
+              ),
             ),
           ),
         ),
@@ -306,7 +328,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
         title: const Text("Log Expense"),
         backgroundColor: Colors.green,
         elevation: 0,
-        foregroundColor: Colors.white, // Ensures back button is white
+        foregroundColor: Colors.white,
       ),
       body: Obx(() {
         if (expenseController.isFetchingCategories.value) {
@@ -320,7 +342,6 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- NEW: Purchase Type Dropdown ---
               DropdownButtonFormField<String>(
                 value: _purchaseType,
                 items: const [
@@ -345,7 +366,6 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
               ),
               const SizedBox(height: 16),
 
-              // --- NEW: Conditional Credit Fields ---
               if (_purchaseType == "credit") ...[
                 TextField(
                   controller: _vendorNameController,
@@ -380,9 +400,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              // --- END NEW FIELDS ---
 
-              // Description
               TextField(
                 controller: descriptionController,
                 decoration: _buildInputDecoration(
@@ -392,14 +410,15 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Category Dropdown
               DropdownButtonFormField<int>(
                 value: selectedCategoryId,
                 items: categories
-                    .map((cat) => DropdownMenuItem<int>(
-                          value: cat.id,
-                          child: Text(cat.name),
-                        ))
+                    .map(
+                      (cat) => DropdownMenuItem<int>(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -413,7 +432,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Item input card
+              // Item Card
               Card(
                 elevation: 2,
                 shadowColor: Colors.green.withOpacity(0.2),
@@ -428,7 +447,10 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                     children: [
                       Text(
                         "Add New Item",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green.shade700,
                             ),
@@ -474,11 +496,13 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                           value: taxType,
                           items: const [
                             DropdownMenuItem(
-                                value: "exclusive",
-                                child: Text("Exclusive Tax")),
+                              value: "exclusive",
+                              child: Text("Exclusive Tax"),
+                            ),
                             DropdownMenuItem(
-                                value: "inclusive",
-                                child: Text("Inclusive Tax")),
+                              value: "inclusive",
+                              child: Text("Inclusive Tax"),
+                            ),
                           ],
                           onChanged: (val) => setState(() => taxType = val!),
                           decoration: _buildInputDecoration(
@@ -491,10 +515,34 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          InkWell(
-                            onTap: () => _openSelectedFile(selectedDocument),
-                            borderRadius: BorderRadius.circular(8),
-                            child: _buildDocumentPreview(selectedDocument),
+                          Stack(
+                            children: [
+                              InkWell(
+                                onTap: () =>
+                                    _openSelectedFile(selectedDocument),
+                                borderRadius: BorderRadius.circular(8),
+                                child:
+                                    _buildDocumentPreview(selectedDocument),
+                              ),
+                              if (selectedDocument != null)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedDocument = null;
+                                      });
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 10,
+                                      backgroundColor: Colors.red,
+                                      child: const Icon(Icons.close,
+                                          size: 12, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -543,14 +591,18 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Items preview list
+              // Added items list
               if (items.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Added Items",
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Added Items",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     ListView.builder(
                       shrinkWrap: true,
@@ -559,10 +611,11 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                       itemBuilder: (context, index) {
                         final item = items[index];
                         return Card(
-                          elevation: 1,
+                          elevation: 8,
                           shadowColor: Colors.green.withOpacity(0.2),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
                             leading: InkWell(
@@ -584,9 +637,8 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                                   Text(
                                     "Tax: ${item.taxRate}% (${item.taxType})",
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade700,
-                                    ),
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700),
                                   ),
                               ],
                             ),
@@ -604,7 +656,6 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                 ),
               const SizedBox(height: 24),
 
-              // Total Expense
               if (items.isNotEmpty)
                 Text(
                   "Total: ₹${totalExpense.toStringAsFixed(2)}",
@@ -613,31 +664,35 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                         color: Colors.green.shade800,
                       ),
                 ),
-
               const SizedBox(height: 24),
 
-              // Submit Button
-              Obx(() => SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed:
-                          expenseController.isLoading.value ? null : _submitExpense,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: expenseController.isLoading.value
+                        ? null
+                        : _submitExpense,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: expenseController.isLoading.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text("Save Expense"),
                     ),
-                  )),
+                    child: expenseController.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text("Save Expense"),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -651,8 +706,8 @@ class Item {
   double subtotal;
   bool isTaxable;
   double taxRate;
-  String taxType; // inclusive or exclusive
-  File? document; // optional for all
+  String taxType;
+  File? document;
 
   Item({
     required this.itemName,

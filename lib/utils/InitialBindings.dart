@@ -14,6 +14,9 @@ import '../module/Logout/Controller/LogoutController.dart';
 import '../module/Logout/Repo/LogoutRepo.dart';
 import '../module/auth/Controller/AuthCotroller.dart';
 import '../module/auth/Repo/AuthRepo.dart';
+import '../module/expense/Repo/expense_repo.dart';
+import '../module/expense/controller/expense_controller.dart';
+import '../module/expense/screens/log_expense_screen.dart';
 import 'ApiClient.dart';
 import 'Constant.dart';
 
@@ -30,6 +33,7 @@ Future<void> init() async {
   Get.lazyPut(() => EmployeeListController(employeeListRepo: Get.find()));
   Get.lazyPut(() => EmployeeProfileController(employeeProfileRepo: Get.find()));
   Get.lazyPut(() => ProfileController());
+  Get.lazyPut(() => ExpenseController(), fenix: true);
 
   /// Repo
   Get.lazyPut(() => AuthRepo(apiClient: Get.find()));
@@ -41,4 +45,5 @@ Future<void> init() async {
   Get.lazyPut(() => EmployeeListRepo(apiClient: Get.find()));
   Get.lazyPut(() => EmployeeProfileRepo(apiClient: Get.find()));
   Get.lazyPut(() => ProfileRepo());
+  Get.lazyPut(() => ExpenseRepo(), fenix: true);
 }
