@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:open_filex/open_filex.dart'; // <-- 1. ADD THIS IMPORT
+import 'package:open_filex/open_filex.dart'; 
 
 class LogExpenseScreen extends StatefulWidget {
   const LogExpenseScreen({super.key});
@@ -20,6 +20,12 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
   final TextEditingController itemNameController = TextEditingController();
   final TextEditingController subtotalController = TextEditingController();
   final TextEditingController taxRateController = TextEditingController();
+
+  // --- NEW: State variables for new fields ---
+  final TextEditingController _vendorNameController = TextEditingController();
+  String _purchaseType = "cash"; // 'cash' or 'credit'
+  String? _creditPurchaseType; // 'service' or 'supply'
+  // ------------------------------------------
 
   int? selectedCategoryId;
   bool isTaxable = false;
@@ -43,35 +49,44 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     }
   }
 
-  // --- Replace your _pickFile() with this version ---
-Future<void> _pickFile() async {
-  FilePickerResult? result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-  );
-
-  if (result != null && result.files.single.path != null) {
-    final pickedFile = File(result.files.single.path!);
-    final fileSizeBytes = await pickedFile.length();
-    final fileSizeMB = fileSizeBytes / (1024 * 1024);
-
-    // Check file size limit (5 MB)
-    if (fileSizeMB > 5) {
-      Get.snackbar(
-        "File Too Large",
-        "Please select a file smaller than 5 MB.",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
-      );
-      return;
-    }
-
-    setState(() {
-      selectedDocument = pickedFile;
-    });
+  // --- NEW: Dispose new controller ---
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    itemNameController.dispose();
+    subtotalController.dispose();
+    taxRateController.dispose();
+    _vendorNameController.dispose(); // <-- Added
+    super.dispose();
   }
-}
+  // -----------------------------------
 
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final pickedFile = File(result.files.single.path!);
+      final fileSizeBytes = await pickedFile.length();
+      final fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+      if (fileSizeMB > 5) {
+        Get.snackbar(
+          "File Too Large",
+          "Please select a file smaller than 5 MB.",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900,
+        );
+        return;
+      }
+
+      setState(() {
+        selectedDocument = pickedFile;
+      });
+    }
+  }
 
   void _addItem() {
     if (itemNameController.text.isEmpty || subtotalController.text.isEmpty) {
@@ -117,7 +132,6 @@ Future<void> _pickFile() async {
     });
   }
 
-  // --- 2. ADD THIS HELPER FUNCTION ---
   Future<void> _openSelectedFile(File? file) async {
     if (file == null) {
       Get.snackbar("No File", "There is no file to open.",
@@ -133,8 +147,8 @@ Future<void> _pickFile() async {
           colorText: Colors.red.shade900);
     }
   }
-  // ------------------------------------
 
+  // --- MODIFIED: _submitExpense (added validation and new fields) ---
   Future<void> _submitExpense() async {
     if (descriptionController.text.isEmpty || selectedCategoryId == null) {
       Get.snackbar("Error", "Please enter description and select category",
@@ -142,6 +156,17 @@ Future<void> _pickFile() async {
           colorText: Colors.red.shade900);
       return;
     }
+
+    // --- NEW: Validation for credit purchase fields ---
+    if (_purchaseType == "credit" &&
+        (_vendorNameController.text.isEmpty || _creditPurchaseType == null)) {
+      Get.snackbar(
+          "Error", "For credit purchase, please enter Vendor Name and Type of Purchase",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900);
+      return;
+    }
+    // --------------------------------------------------
 
     if (items.isEmpty) {
       Get.snackbar("Error", "Please add at least one item",
@@ -180,12 +205,20 @@ Future<void> _pickFile() async {
       itemsData.add(map);
     }
 
+    // --- MODIFIED: Pass new data to the controller ---
+    // Note: You will need to update your ExpenseController.createExpense 
+    // method to accept these new parameters.
     await expenseController.createExpense(
       categoryId: selectedCategoryId!,
       description: descriptionController.text,
       items: itemsData,
       files: fileMap,
+      // --- NEW PARAMETERS ---
+      purchaseType: _purchaseType,
+      vendorName: _purchaseType == "credit" ? _vendorNameController.text : null,
+      creditPurchaseType: _purchaseType == "credit" ? _creditPurchaseType : null,
     );
+    // -----------------------------------------------
 
     if (expenseController.expenseResponse.value?.success == true) {
       Get.snackbar("Success", "Expense logged successfully ✅",
@@ -194,6 +227,7 @@ Future<void> _pickFile() async {
       Navigator.pop(context, true);
     }
   }
+  // --- END MODIFICATION ---
 
   InputDecoration _buildInputDecoration(
       {required String labelText, required IconData icon}) {
@@ -218,54 +252,52 @@ Future<void> _pickFile() async {
   }
 
   Widget _buildDocumentPreview(File? document) {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        width: 50,
-        height: 50,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            color: Colors.grey.shade100,
-            alignment: Alignment.center,
-            child: () {
-              if (document == null) {
-                return const Icon(Icons.insert_drive_file_outlined,
-                    color: Colors.grey);
-              }
-              if (document.path.endsWith(".pdf")) {
-                return const Icon(Icons.picture_as_pdf,
-                    color: Colors.red, size: 30);
-              }
-              return Image.file(
-                document,
-                fit: BoxFit.cover,
-                width: 50,
-                height: 50,
-              );
-            }(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 50,
+          height: 50,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              color: Colors.grey.shade100,
+              alignment: Alignment.center,
+              child: () {
+                if (document == null) {
+                  return const Icon(Icons.insert_drive_file_outlined,
+                      color: Colors.grey);
+                }
+                if (document.path.endsWith(".pdf")) {
+                  return const Icon(Icons.picture_as_pdf,
+                      color: Colors.red, size: 30);
+                }
+                return Image.file(
+                  document,
+                  fit: BoxFit.cover,
+                  width: 50,
+                  height: 50,
+                );
+              }(),
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: 4),
-      // --- File size text (only if file selected)
-      if (document != null)
-        Text(
-          _getReadableFileSize(document),
-          style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
-          textAlign: TextAlign.center,
-        ),
-    ],
-  );
-}
-
+        const SizedBox(height: 4),
+        if (document != null)
+          Text(
+            _getReadableFileSize(document),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+            textAlign: TextAlign.center,
+          ),
+      ],
+    );
+  }
 
   String _getReadableFileSize(File file) {
-  final bytes = file.lengthSync();
-  final mb = bytes / (1024 * 1024);
-  return "${mb.toStringAsFixed(2)} MB / 5 MB";
-}
+    final bytes = file.lengthSync();
+    final mb = bytes / (1024 * 1024);
+    return "${mb.toStringAsFixed(2)} MB / 5 MB";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -288,6 +320,68 @@ Future<void> _pickFile() async {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // --- NEW: Purchase Type Dropdown ---
+              DropdownButtonFormField<String>(
+                value: _purchaseType,
+                items: const [
+                  DropdownMenuItem(
+                    value: "cash",
+                    child: Text("Cash Purchase"),
+                  ),
+                  DropdownMenuItem(
+                    value: "credit",
+                    child: Text("Credit Purchase"),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _purchaseType = value!;
+                  });
+                },
+                decoration: _buildInputDecoration(
+                  labelText: "Purchase Type",
+                  icon: Icons.storefront,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // --- NEW: Conditional Credit Fields ---
+              if (_purchaseType == "credit") ...[
+                TextField(
+                  controller: _vendorNameController,
+                  decoration: _buildInputDecoration(
+                    labelText: "Vendor Name",
+                    icon: Icons.person_outline,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _creditPurchaseType,
+                  hint: const Text("Select Purchase Type"),
+                  items: const [
+                    DropdownMenuItem(
+                      value: "service",
+                      child: Text("Service"),
+                    ),
+                    DropdownMenuItem(
+                      value: "supply",
+                      child: Text("Supply"),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _creditPurchaseType = value;
+                    });
+                  },
+                  decoration: _buildInputDecoration(
+                    labelText: "Type of Purchase",
+                    icon: Icons.work_outline,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              // --- END NEW FIELDS ---
+
               // Description
               TextField(
                 controller: descriptionController,
@@ -319,7 +413,7 @@ Future<void> _pickFile() async {
               ),
               const SizedBox(height: 24),
 
-              // --- BEAUTIFIED: Item input card ---
+              // Item input card
               Card(
                 elevation: 2,
                 shadowColor: Colors.green.withOpacity(0.2),
@@ -332,7 +426,6 @@ Future<void> _pickFile() async {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Card Title
                       Text(
                         "Add New Item",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -341,8 +434,6 @@ Future<void> _pickFile() async {
                             ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Item Name
                       TextField(
                         controller: itemNameController,
                         decoration: _buildInputDecoration(
@@ -351,8 +442,6 @@ Future<void> _pickFile() async {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Subtotal
                       TextField(
                         controller: subtotalController,
                         keyboardType: TextInputType.number,
@@ -362,8 +451,6 @@ Future<void> _pickFile() async {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Taxable Switch
                       SwitchListTile(
                         title: const Text("Is this item taxable?"),
                         value: isTaxable,
@@ -372,8 +459,6 @@ Future<void> _pickFile() async {
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                       ),
-
-                      // Taxable Fields
                       if (isTaxable) ...[
                         const SizedBox(height: 12),
                         TextField(
@@ -403,20 +488,15 @@ Future<void> _pickFile() async {
                         ),
                       ],
                       const SizedBox(height: 16),
-
-                      // --- 3. MAKE THIS PREVIEW CLICKABLE ---
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 1. The preview (now clickable)
                           InkWell(
                             onTap: () => _openSelectedFile(selectedDocument),
                             borderRadius: BorderRadius.circular(8),
                             child: _buildDocumentPreview(selectedDocument),
                           ),
                           const SizedBox(width: 12),
-
-                          // 2. The button, expanded to fill space
                           Expanded(
                             child: TextButton.icon(
                               onPressed: _pickFile,
@@ -440,11 +520,7 @@ Future<void> _pickFile() async {
                           ),
                         ],
                       ),
-                      // --- END MODIFICATION ---
-
                       const SizedBox(height: 12),
-
-                      // Add Item Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -465,10 +541,9 @@ Future<void> _pickFile() async {
                   ),
                 ),
               ),
-              // -----------------------------------
               const SizedBox(height: 24),
 
-              // --- MODIFIED: Items preview list ---
+              // Items preview list
               if (items.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,7 +565,6 @@ Future<void> _pickFile() async {
                               borderRadius: BorderRadius.circular(12)),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
-                            // --- 3. MAKE THIS PREVIEW CLICKABLE ---
                             leading: InkWell(
                               onTap: () => _openSelectedFile(item.document),
                               borderRadius: BorderRadius.circular(8),
@@ -528,7 +602,6 @@ Future<void> _pickFile() async {
                     ),
                   ],
                 ),
-              // -----------------------------------
               const SizedBox(height: 24),
 
               // Total Expense
