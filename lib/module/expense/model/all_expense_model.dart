@@ -34,6 +34,8 @@ class Expense {
   Creator? creator;
   Branch? branch;
   List<Item>? items;
+  String? vendorname;
+  String? typeOfSupplOrService;
 
   Expense({
     this.id,
@@ -42,6 +44,8 @@ class Expense {
     this.paymentDate,
     this.subtotal,
     this.taxTotal,
+    this.vendorname,
+    this.typeOfSupplOrService,
     this.totalAmount,
     this.paymentsStatus,
     this.createdBy,
@@ -61,6 +65,8 @@ class Expense {
       id: json['id'],
       branchId: json['branch_id'],
       employeeId: json['employee_id'],
+      vendorname: json['vendor_name'],
+      typeOfSupplOrService: json['type_of_supply_or_service'],
       paymentDate: json['payment_date'],
       subtotal: json['subtotal'] != null ? double.tryParse(json['subtotal'].toString()) : null,
       taxTotal: json['tax_total'] != null ? double.tryParse(json['tax_total'].toString()) : null,
@@ -70,6 +76,7 @@ class Expense {
       categoryId: json['category_id'],
       description: json['description'],
       document: json['document'],
+
       isDeleted: json['is_deleted'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],

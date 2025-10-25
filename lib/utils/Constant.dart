@@ -48,15 +48,21 @@ static const String CREATEEMPLOYEERESIGNATION = "/api/resignations";
 
 
 // expense
+
+static const  String EXPENSECATEGORY= "/api/expense-category";
 static const String CREATEEXPENSE = "/api/expense";
+static const String CREDITEXPENSE = "/api/credit-purchase";
+
+
 static const String GETEXPENSE = "/api/expense";
 static const String GETBALANCE = "/api/branch-wallets";
 static const String FUNDREQUEST ="/api/fund-request" ;
-static const String MYFUNDREQUEST ="/api/fund-request/my" ;
+static const String MYFUNDREQUEST ="/api/fund-request/my";
 static const String STATUSUPDATE ="/api/fund-request" ;
 
 // PROFILE
 static const String MYPROFILE = "/api/profile";
+
 
 
 

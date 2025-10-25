@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:open_filex/open_filex.dart'; // <-- 1. ADD THIS IMPORT
+import 'package:open_filex/open_filex.dart';
 
 class LogExpenseScreen extends StatefulWidget {
   const LogExpenseScreen({super.key});
@@ -21,6 +21,12 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
   final TextEditingController subtotalController = TextEditingController();
   final TextEditingController taxRateController = TextEditingController();
 
+  // --- NEW: State variables for new fields ---
+  final TextEditingController _vendorNameController = TextEditingController();
+  String _purchaseType = "cash"; // 'cash' or 'credit'
+  String? _creditPurchaseType; // 'service' or 'supply'
+  // ------------------------------------------
+
   int? selectedCategoryId;
   bool isTaxable = false;
   File? selectedDocument;
@@ -29,11 +35,12 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
   List<Item> items = [];
 
   double get totalExpense => items.fold(
-      0,
-      (sum, item) =>
-          sum +
-          item.subtotal +
-          (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0));
+        0,
+        (sum, item) =>
+            sum +
+            item.subtotal +
+            (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0),
+      );
 
   @override
   void initState() {
@@ -43,48 +50,64 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
     }
   }
 
-  // --- Replace your _pickFile() with this version ---
-Future<void> _pickFile() async {
-  FilePickerResult? result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-  );
+  // --- Dispose controllers ---
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    itemNameController.dispose();
+    subtotalController.dispose();
+    taxRateController.dispose();
+    _vendorNameController.dispose();
+    super.dispose();
+  }
 
-  if (result != null && result.files.single.path != null) {
-    final pickedFile = File(result.files.single.path!);
-    final fileSizeBytes = await pickedFile.length();
-    final fileSizeMB = fileSizeBytes / (1024 * 1024);
+  // --- File picker with size validation ---
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+    );
 
-    // Check file size limit (5 MB)
-    if (fileSizeMB > 5) {
+    if (result != null && result.files.single.path != null) {
+      final pickedFile = File(result.files.single.path!);
+      final fileSizeBytes = await pickedFile.length();
+      final fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+      // Check file size limit (5 MB)
+      if (fileSizeMB > 5) {
+        Get.snackbar(
+          "File Too Large",
+          "Please select a file smaller than 5 MB.",
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red.shade900,
+        );
+        return;
+      }
+
+      setState(() {
+        selectedDocument = pickedFile;
+      });
+    }
+  }
+
+  void _addItem() {
+    if (itemNameController.text.isEmpty || subtotalController.text.isEmpty) {
       Get.snackbar(
-        "File Too Large",
-        "Please select a file smaller than 5 MB.",
+        "Error",
+        "Enter item name and subtotal",
         backgroundColor: Colors.red.withOpacity(0.1),
         colorText: Colors.red.shade900,
       );
       return;
     }
 
-    setState(() {
-      selectedDocument = pickedFile;
-    });
-  }
-}
-
-
-  void _addItem() {
-    if (itemNameController.text.isEmpty || subtotalController.text.isEmpty) {
-      Get.snackbar("Error", "Enter item name and subtotal",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
-      return;
-    }
-
     if (isTaxable && taxRateController.text.isEmpty) {
-      Get.snackbar("Error", "Enter tax rate for taxable item",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Enter tax rate for taxable item",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
@@ -92,16 +115,17 @@ Future<void> _pickFile() async {
     double taxRate = double.tryParse(taxRateController.text) ?? 0;
 
     setState(() {
-      items.add(Item(
-        itemName: itemNameController.text,
-        subtotal: subtotal,
-        isTaxable: isTaxable,
-        taxRate: taxRate,
-        document: selectedDocument, // optional for all
-        taxType: taxType,
-      ));
+      items.add(
+        Item(
+          itemName: itemNameController.text,
+          subtotal: subtotal,
+          isTaxable: isTaxable,
+          taxRate: taxRate,
+          document: selectedDocument,
+          taxType: taxType,
+        ),
+      );
 
-      // Reset input fields
       itemNameController.clear();
       subtotalController.clear();
       taxRateController.clear();
@@ -117,36 +141,57 @@ Future<void> _pickFile() async {
     });
   }
 
-  // --- 2. ADD THIS HELPER FUNCTION ---
   Future<void> _openSelectedFile(File? file) async {
     if (file == null) {
-      Get.snackbar("No File", "There is no file to open.",
-          backgroundColor: Colors.orange.withOpacity(0.1),
-          colorText: Colors.orange.shade900);
+      Get.snackbar(
+        "No File",
+        "There is no file to open.",
+        backgroundColor: Colors.orange.withOpacity(0.1),
+        colorText: Colors.orange.shade900,
+      );
       return;
     }
     if (await file.exists()) {
       await OpenFilex.open(file.path);
     } else {
-      Get.snackbar("Error", "File not found.",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "File not found.",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
     }
   }
-  // ------------------------------------
 
   Future<void> _submitExpense() async {
     if (descriptionController.text.isEmpty || selectedCategoryId == null) {
-      Get.snackbar("Error", "Please enter description and select category",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Please enter description and select category",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
+      return;
+    }
+
+    if (_purchaseType == "credit" &&
+        (_vendorNameController.text.isEmpty || _creditPurchaseType == null)) {
+      Get.snackbar(
+        "Error",
+        "For credit purchase, please enter Vendor Name and Type of Purchase",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
     if (items.isEmpty) {
-      Get.snackbar("Error", "Please add at least one item",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900);
+      Get.snackbar(
+        "Error",
+        "Please add at least one item",
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red.shade900,
+      );
       return;
     }
 
@@ -185,18 +230,27 @@ Future<void> _pickFile() async {
       description: descriptionController.text,
       items: itemsData,
       files: fileMap,
+      purchaseType: _purchaseType,
+      vendorName: _purchaseType == "credit" ? _vendorNameController.text : null,
+      creditPurchaseType:
+          _purchaseType == "credit" ? _creditPurchaseType : null,
     );
 
     if (expenseController.expenseResponse.value?.success == true) {
-      Get.snackbar("Success", "Expense logged successfully ✅",
-          backgroundColor: Colors.green.withOpacity(0.2),
-          colorText: Colors.green.shade800);
+      Get.snackbar(
+        "Success",
+        "Expense logged successfully ✅",
+        backgroundColor: Colors.green.withOpacity(0.2),
+        colorText: Colors.green.shade800,
+      );
       Navigator.pop(context, true);
     }
   }
 
-  InputDecoration _buildInputDecoration(
-      {required String labelText, required IconData icon}) {
+  InputDecoration _buildInputDecoration({
+    required String labelText,
+    required IconData icon,
+  }) {
     return InputDecoration(
       labelText: labelText,
       prefixIcon: Icon(icon, color: Colors.green),
@@ -218,54 +272,54 @@ Future<void> _pickFile() async {
   }
 
   Widget _buildDocumentPreview(File? document) {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        width: 50,
-        height: 50,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            color: Colors.grey.shade100,
-            alignment: Alignment.center,
-            child: () {
-              if (document == null) {
-                return const Icon(Icons.insert_drive_file_outlined,
-                    color: Colors.grey);
-              }
-              if (document.path.endsWith(".pdf")) {
-                return const Icon(Icons.picture_as_pdf,
-                    color: Colors.red, size: 30);
-              }
-              return Image.file(
-                document,
-                fit: BoxFit.cover,
-                width: 50,
-                height: 50,
-              );
-            }(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SizedBox(
+            width: 50,
+            height: 50,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: Colors.grey.shade100,
+                alignment: Alignment.center,
+                child: () {
+                  if (document == null) {
+                    return const Icon(Icons.insert_drive_file_outlined,
+                        color: Colors.grey);
+                  }
+                  if (document.path.endsWith(".pdf")) {
+                    return const Icon(Icons.picture_as_pdf,
+                        color: Colors.red, size: 30);
+                  }
+                  return Image.file(
+                    document,
+                    fit: BoxFit.cover,
+                    width: 50,
+                    height: 50,
+                  );
+                }(),
+              ),
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: 4),
-      // --- File size text (only if file selected)
-      if (document != null)
-        Text(
-          _getReadableFileSize(document),
-          style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
-          textAlign: TextAlign.center,
-        ),
-    ],
-  );
-}
-
+        const SizedBox(height: 4),
+        if (document != null)
+          Text(
+            _getReadableFileSize(document),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+            textAlign: TextAlign.center,
+          ),
+      ],
+    );
+  }
 
   String _getReadableFileSize(File file) {
-  final bytes = file.lengthSync();
-  final mb = bytes / (1024 * 1024);
-  return "${mb.toStringAsFixed(2)} MB / 5 MB";
-}
+    final bytes = file.lengthSync();
+    final mb = bytes / (1024 * 1024);
+    return "${mb.toStringAsFixed(2)} MB / 5 MB";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +328,7 @@ Future<void> _pickFile() async {
         title: const Text("Log Expense"),
         backgroundColor: Colors.green,
         elevation: 0,
-        foregroundColor: Colors.white, // Ensures back button is white
+        foregroundColor: Colors.white,
       ),
       body: Obx(() {
         if (expenseController.isFetchingCategories.value) {
@@ -288,7 +342,65 @@ Future<void> _pickFile() async {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Description
+              DropdownButtonFormField<String>(
+                value: _purchaseType,
+                items: const [
+                  DropdownMenuItem(
+                    value: "cash",
+                    child: Text("Cash Purchase"),
+                  ),
+                  DropdownMenuItem(
+                    value: "credit",
+                    child: Text("Credit Purchase"),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _purchaseType = value!;
+                  });
+                },
+                decoration: _buildInputDecoration(
+                  labelText: "Purchase Type",
+                  icon: Icons.storefront,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              if (_purchaseType == "credit") ...[
+                TextField(
+                  controller: _vendorNameController,
+                  decoration: _buildInputDecoration(
+                    labelText: "Vendor Name",
+                    icon: Icons.person_outline,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _creditPurchaseType,
+                  hint: const Text("Select Purchase Type"),
+                  items: const [
+                    DropdownMenuItem(
+                      value: "service",
+                      child: Text("Service"),
+                    ),
+                    DropdownMenuItem(
+                      value: "supply",
+                      child: Text("Supply"),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _creditPurchaseType = value;
+                    });
+                  },
+                  decoration: _buildInputDecoration(
+                    labelText: "Type of Purchase",
+                    icon: Icons.work_outline,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               TextField(
                 controller: descriptionController,
                 decoration: _buildInputDecoration(
@@ -298,14 +410,15 @@ Future<void> _pickFile() async {
               ),
               const SizedBox(height: 16),
 
-              // Category Dropdown
               DropdownButtonFormField<int>(
                 value: selectedCategoryId,
                 items: categories
-                    .map((cat) => DropdownMenuItem<int>(
-                          value: cat.id,
-                          child: Text(cat.name),
-                        ))
+                    .map(
+                      (cat) => DropdownMenuItem<int>(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -319,7 +432,7 @@ Future<void> _pickFile() async {
               ),
               const SizedBox(height: 24),
 
-              // --- BEAUTIFIED: Item input card ---
+              // Item Card
               Card(
                 elevation: 2,
                 shadowColor: Colors.green.withOpacity(0.2),
@@ -332,17 +445,17 @@ Future<void> _pickFile() async {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Card Title
                       Text(
                         "Add New Item",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green.shade700,
                             ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Item Name
                       TextField(
                         controller: itemNameController,
                         decoration: _buildInputDecoration(
@@ -351,8 +464,6 @@ Future<void> _pickFile() async {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Subtotal
                       TextField(
                         controller: subtotalController,
                         keyboardType: TextInputType.number,
@@ -362,8 +473,6 @@ Future<void> _pickFile() async {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Taxable Switch
                       SwitchListTile(
                         title: const Text("Is this item taxable?"),
                         value: isTaxable,
@@ -372,8 +481,6 @@ Future<void> _pickFile() async {
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                       ),
-
-                      // Taxable Fields
                       if (isTaxable) ...[
                         const SizedBox(height: 12),
                         TextField(
@@ -389,11 +496,13 @@ Future<void> _pickFile() async {
                           value: taxType,
                           items: const [
                             DropdownMenuItem(
-                                value: "exclusive",
-                                child: Text("Exclusive Tax")),
+                              value: "exclusive",
+                              child: Text("Exclusive Tax"),
+                            ),
                             DropdownMenuItem(
-                                value: "inclusive",
-                                child: Text("Inclusive Tax")),
+                              value: "inclusive",
+                              child: Text("Inclusive Tax"),
+                            ),
                           ],
                           onChanged: (val) => setState(() => taxType = val!),
                           decoration: _buildInputDecoration(
@@ -403,20 +512,39 @@ Future<void> _pickFile() async {
                         ),
                       ],
                       const SizedBox(height: 16),
-
-                      // --- 3. MAKE THIS PREVIEW CLICKABLE ---
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 1. The preview (now clickable)
-                          InkWell(
-                            onTap: () => _openSelectedFile(selectedDocument),
-                            borderRadius: BorderRadius.circular(8),
-                            child: _buildDocumentPreview(selectedDocument),
+                          Stack(
+                            children: [
+                              InkWell(
+                                onTap: () =>
+                                    _openSelectedFile(selectedDocument),
+                                borderRadius: BorderRadius.circular(8),
+                                child:
+                                    _buildDocumentPreview(selectedDocument),
+                              ),
+                              if (selectedDocument != null)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedDocument = null;
+                                      });
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 10,
+                                      backgroundColor: Colors.red,
+                                      child: const Icon(Icons.close,
+                                          size: 12, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(width: 12),
-
-                          // 2. The button, expanded to fill space
                           Expanded(
                             child: TextButton.icon(
                               onPressed: _pickFile,
@@ -440,11 +568,7 @@ Future<void> _pickFile() async {
                           ),
                         ],
                       ),
-                      // --- END MODIFICATION ---
-
                       const SizedBox(height: 12),
-
-                      // Add Item Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -465,17 +589,20 @@ Future<void> _pickFile() async {
                   ),
                 ),
               ),
-              // -----------------------------------
               const SizedBox(height: 24),
 
-              // --- MODIFIED: Items preview list ---
+              // Added items list
               if (items.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Added Items",
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Added Items",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     ListView.builder(
                       shrinkWrap: true,
@@ -484,13 +611,13 @@ Future<void> _pickFile() async {
                       itemBuilder: (context, index) {
                         final item = items[index];
                         return Card(
-                          elevation: 1,
+                          elevation: 8,
                           shadowColor: Colors.green.withOpacity(0.2),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
-                            // --- 3. MAKE THIS PREVIEW CLICKABLE ---
                             leading: InkWell(
                               onTap: () => _openSelectedFile(item.document),
                               borderRadius: BorderRadius.circular(8),
@@ -510,9 +637,8 @@ Future<void> _pickFile() async {
                                   Text(
                                     "Tax: ${item.taxRate}% (${item.taxType})",
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade700,
-                                    ),
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700),
                                   ),
                               ],
                             ),
@@ -528,10 +654,8 @@ Future<void> _pickFile() async {
                     ),
                   ],
                 ),
-              // -----------------------------------
               const SizedBox(height: 24),
 
-              // Total Expense
               if (items.isNotEmpty)
                 Text(
                   "Total: ₹${totalExpense.toStringAsFixed(2)}",
@@ -540,31 +664,35 @@ Future<void> _pickFile() async {
                         color: Colors.green.shade800,
                       ),
                 ),
-
               const SizedBox(height: 24),
 
-              // Submit Button
-              Obx(() => SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed:
-                          expenseController.isLoading.value ? null : _submitExpense,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: expenseController.isLoading.value
+                        ? null
+                        : _submitExpense,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: expenseController.isLoading.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text("Save Expense"),
                     ),
-                  )),
+                    child: expenseController.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text("Save Expense"),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -578,8 +706,8 @@ class Item {
   double subtotal;
   bool isTaxable;
   double taxRate;
-  String taxType; // inclusive or exclusive
-  File? document; // optional for all
+  String taxType;
+  File? document;
 
   Item({
     required this.itemName,

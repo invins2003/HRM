@@ -13,11 +13,14 @@ class ExpenseController extends GetxController {
   final ExpenseRepo expenseRepo = ExpenseRepo();
 
   RxBool isLoading = false.obs;
-    RxBool isFetching = false.obs;
+  
+  // ✅ CHANGED: Replaced 'isFetching' with two separate flags
+  RxBool isFetchingNormal = false.obs;
+  RxBool isFetchingCredit = false.obs;
+  
   Rx<ExpenseResponse?> expenseList = Rx<ExpenseResponse?>(null);
+  Rx<ExpenseResponse?> expenseCreditList = Rx<ExpenseResponse?>(null);
   Rx<ExpenseModel?> expenseResponse = Rx<ExpenseModel?>(null);
-
-
 
   RxList<ExpenseCategory> categoryList = <ExpenseCategory>[].obs;
   RxBool isFetchingCategories = false.obs;
@@ -40,19 +43,34 @@ class ExpenseController extends GetxController {
   }
 
   Future<void> createExpense({
-      required int categoryId,
+    required int categoryId,
     required String description,
     required List<Map<String, dynamic>> items,
-     required Map<String,MultipartFile> files,
+    required Map<String, MultipartFile> files,
+    required String purchaseType,
+    String? vendorName,
+    String? creditPurchaseType,
   }) async {
     isLoading.value = true;
+    dynamic result;
 
-final result = await expenseRepo.createExpense(
-      description: description,
-      items: items,
-      files: files,
-      categoryId: categoryId
-    );
+    if (purchaseType == "Cash Purchase") {
+      result = await expenseRepo.createExpense(
+          description: description,
+          items: items,
+          files: files,
+          categoryId: categoryId,
+          purchaseType: purchaseType);
+    } else {
+      result = await expenseRepo.createExpense(
+          description: description,
+          items: items,
+          files: files,
+          categoryId: categoryId,
+          purchaseType: purchaseType,
+          vendorName: vendorName,
+          creditPurchaseType: creditPurchaseType);
+    }
 
     isLoading.value = false;
 
@@ -60,14 +78,15 @@ final result = await expenseRepo.createExpense(
       expenseResponse.value = result;
       Fluttertoast.showToast(msg: "Expense created successfully ✅");
     } else {
-      Fluttertoast.showToast(msg: result?.message ?? "Failed to create expense ❌");
+      Fluttertoast.showToast(
+          msg: result?.message ?? "Failed to create expense ❌");
     }
   }
 
-
   Future<void> fetchExpenses() async {
     try {
-      isFetching.value = true;
+      // ✅ CHANGED: Use 'isFetchingNormal'
+      isFetchingNormal.value = true;
       final result = await expenseRepo.fetchExpenses();
 
       if (result.success!) {
@@ -77,7 +96,26 @@ final result = await expenseRepo.createExpense(
       expenseList.value = ExpenseResponse(success: false, data: []);
       Fluttertoast.showToast(msg: "Error fetching expenses: $e");
     } finally {
-      isFetching.value = false;
+      // ✅ CHANGED: Use 'isFetchingNormal'
+      isFetchingNormal.value = false;
+    }
+  }
+
+  Future<void> fetchCreditExpenses() async {
+    try {
+      // ✅ CHANGED: Use 'isFetchingCredit'
+      isFetchingCredit.value = true;
+      final result = await expenseRepo.fetchCreditExpenses();
+
+      if (result.success!) {
+        expenseCreditList.value = result;
+      }
+    } catch (e) {
+      expenseCreditList.value = ExpenseResponse(success: false, data: []);
+      Fluttertoast.showToast(msg: "Error fetching expenses: $e");
+    } finally {
+      // ✅ CHANGED: Use 'isFetchingCredit'
+      isFetchingCredit.value = false;
     }
   }
 
@@ -95,8 +133,7 @@ final result = await expenseRepo.createExpense(
     }
   }
 
-
-Rx<FundRequestModel?> fundRequest = Rx<FundRequestModel?>(null);
+  Rx<FundRequestModel?> fundRequest = Rx<FundRequestModel?>(null);
 
   Future<void> createFundRequest({
     required double amount,
@@ -124,22 +161,22 @@ Rx<FundRequestModel?> fundRequest = Rx<FundRequestModel?>(null);
     }
   }
 
-Rx<FundRequestListModel?> fundRequestList = Rx<FundRequestListModel?>(null);
-RxBool isFetchingRequests = false.obs;
+  Rx<FundRequestListModel?> fundRequestList = Rx<FundRequestListModel?>(null);
+  RxBool isFetchingRequests = false.obs;
 
-
- Future<void> fetchMyFundRequests() async {
-  try {
-    isFetchingRequests.value = true;
-    final result = await expenseRepo.fetchMyFundRequests();
-    fundRequestList.value = result;
-  } catch (e) {
-    Fluttertoast.showToast(msg: "Error fetching requests: $e");
-  } finally {
-    isFetchingRequests.value = false;
+  Future<void> fetchMyFundRequests() async {
+    try {
+      isFetchingRequests.value = true;
+      final result = await expenseRepo.fetchMyFundRequests();
+      fundRequestList.value = result;
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Error fetching requests: $e");
+    } finally {
+      isFetchingRequests.value = false;
+    }
   }
-}
- // ✅ Update Fund Request Status (e.g. "received")
+
+  // ✅ Update Fund Request Status (e.g. "received")
   Future<void> updateStatus({
     required int id,
     required String status,
@@ -151,7 +188,10 @@ RxBool isFetchingRequests = false.obs;
 
       if (response.statusCode == 200 &&
           (response.body['success'] == true ||
-           response.body['message']?.toString().contains("updated") == true)) {
+              response.body['message']
+                      ?.toString()
+                      .contains("updated") ==
+                  true)) {
         Fluttertoast.showToast(msg: "Status updated to $status ✅");
 
         // Refresh the fund request list after updating
