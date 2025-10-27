@@ -1,4 +1,3 @@
-
 import 'package:erp_admin/AppColors/AppColors.dart';
 import 'package:erp_admin/module/MainScreen/MainScreen.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +5,12 @@ import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class BiometricController extends GetxController {
   final LocalAuthentication auth = LocalAuthentication();
   RxBool isBiometricEnabled = false.obs;
 
   /// Show dialog only after first login
   void askBiometricPermission() {
-
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -81,7 +78,13 @@ class BiometricController extends GetxController {
     try {
       bool canCheck = await auth.canCheckBiometrics;
       if (!canCheck) {
-        Get.snackbar("Error", "Biometric not available");
+        Get.snackbar(
+          "Error",
+          "Biometric not available",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         Get.offAll(() => const Mainscreen());
         return;
       }
@@ -99,14 +102,26 @@ class BiometricController extends GetxController {
       if (authenticated) {
         isBiometricEnabled.value = true;
         await prefs.setBool("BIOMETRIC_ENABLED", true);
-        Get.snackbar("Success", "Biometric enabled");
+        Get.snackbar(
+          "Success",
+          "Biometric enabled",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         Get.offAll(() => const Mainscreen());
       } else {
         await prefs.setBool("BIOMETRIC_ENABLED", false);
         Get.offAll(() => const Mainscreen());
       }
     } catch (e) {
-      Get.snackbar("Error", "Biometric failed: $e");
+      Get.snackbar(
+        "Error",
+        "Biometric failed: $e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       Get.offAll(() => const Mainscreen());
     }
   }

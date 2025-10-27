@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:erp_admin/module/auth/Model/loginModel.dart';
 import 'package:erp_admin/utils/Constant.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Repo/AuthRepo.dart';
@@ -23,8 +23,13 @@ class AuthController extends GetxController {
       if (response.statusCode == 200) {
         final loginModel = LoginModel.fromJson(response.body);
 
-        Fluttertoast.showToast(msg: "Login Successful");
-        Get.snackbar("Success", "Login Successful");
+        Get.snackbar(
+          "Success",
+          "Login Successful",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         await prefs.setString("USER_TOKEN", loginModel.token ?? "");
         Constants.TOKEN = loginModel.token.toString();
         bool? alreadySet = prefs.getBool("BIOMETRIC_ENABLED");
@@ -40,12 +45,24 @@ class AuthController extends GetxController {
 
         return true;
       } else {
-        Fluttertoast.showToast(msg: "Login failed ${response.statusCode}");
+        Get.snackbar(
+          "Faild",
+          "Login failed ${response.statusCode}",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         log("Status Code :------ ${response.statusCode}");
         return false;
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Something went wrong: $e");
+      Get.snackbar(
+        "Wrong",
+        "Something went wrong: $e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.yellow,
+        colorText: Colors.white,
+      );
       print("Error --------->>>>>>>>>>>>>>> ${e}");
       return false;
     } finally {

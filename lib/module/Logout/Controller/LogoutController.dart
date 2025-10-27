@@ -1,7 +1,7 @@
 import 'package:erp_admin/module/Logout/Repo/LogoutRepo.dart';
 import 'package:erp_admin/module/auth/Model/ErrorModel.dart';
 import 'package:erp_admin/module/auth/screens/signin.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,8 +50,9 @@ class LogoutController extends GetxController {
         // Clear both token and biometric flag
         await prefs.remove("USER_TOKEN");
         await prefs.remove("BIOMETRIC_ENABLED");
-
-        Fluttertoast.showToast(msg: successModel.message.toString());
+        //
+        // Fluttertoast.showToast(msg: successModel.message.toString());
+        //
         Get.snackbar("Success", "Logout Successfully");
 
         // Navigate to login
@@ -59,7 +60,14 @@ class LogoutController extends GetxController {
       } else {
         isloading.value = false;
         final errorModel = ErrorModel.fromJson(response.body);
-        Fluttertoast.showToast(msg: errorModel.message.toString());
+        // Fluttertoast.showToast(msg: errorModel.message.toString());
+        Get.snackbar(
+          "failed",
+          errorModel.message.toString(),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString());
