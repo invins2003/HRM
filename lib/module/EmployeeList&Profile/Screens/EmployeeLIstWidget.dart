@@ -1235,6 +1235,7 @@ void _showEarlyLeaveDialog(
                         const SnackBar(
                           content: Text("Please enter a reason ⚠️"),
                           backgroundColor: Colors.redAccent,
+
                           behavior: SnackBarBehavior.floating,
                           margin: EdgeInsets.only(
                             bottom: 16,
