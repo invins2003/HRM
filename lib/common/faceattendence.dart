@@ -9,7 +9,6 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 class FaceNetService {
   Interpreter? _interpreter;
-
   Future<void> loadModel() async {
     try {
       final options = InterpreterOptions();
@@ -193,7 +192,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
           if (_cameraController != null &&
               _cameraController!.value.isInitialized)
             CameraPreview(_cameraController!), // Keep camera preview same
-
           // Overlay message
           Positioned(
             bottom: 120,
@@ -232,7 +230,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _captureFace,
-        label: const Text("Capture Face", style: TextStyle(color: Colors.white)),
+        label: const Text(
+          "Capture Face",
+          style: TextStyle(color: Colors.white),
+        ),
         icon: const Icon(Icons.camera_alt, color: Colors.white),
         backgroundColor: Colors.green,
       ),

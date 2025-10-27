@@ -88,16 +88,31 @@ class EmployeeListController extends GetxController {
       );
 
       if (response.success == true) {
-        Get.snackbar("Success", response.message);
+        Get.snackbar(
+          "Success",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         log("Early Leaving Updated: ${response}");
       } else {
-        Get.snackbar("Failed", response.message);
+        Get.snackbar(
+          "Failed",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         log("Update failed: ${response}");
       }
     } catch (e) {
       Get.snackbar(
         "Error",
         "Failed to update early leaving please try after sometime.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       log("Error in updateEarlyLeavingController ---> $e");
     } finally {
@@ -122,16 +137,31 @@ class EmployeeListController extends GetxController {
       );
 
       if (response.success == true) {
-        Get.snackbar("Success", response.message);
+        Get.snackbar(
+          "Success",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         log("Over-Time Updated: ${response}");
       } else {
-        Get.snackbar("Failed", response.message);
+        Get.snackbar(
+          "Failed",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         log("Update failed: ${response}");
       }
     } catch (e) {
       Get.snackbar(
         "Error",
         "Failed to update early leaving!! please try after sometime.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       log("Error in updateOverTimeController ---> $e");
     } finally {
@@ -162,14 +192,32 @@ class EmployeeListController extends GetxController {
       );
 
       if (response.success == true) {
-        Get.snackbar("Success", response.message);
+        Get.snackbar(
+          "Success",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         log("Attendance Updated: $response");
       } else {
-        Get.snackbar("Failed", response.message);
+        Get.snackbar(
+          "Failed",
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         log("Attendance update failed: $response");
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to mark attendance.");
+      Get.snackbar(
+        "Error",
+        "Failed to mark attendance.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       log("Error in markAttendanceController: $e");
     } finally {
       isLoading.value = false;
@@ -188,14 +236,32 @@ class EmployeeListController extends GetxController {
       if (response.statusCode == 200) {
         employeelisttt.remove(emp); // remove from list
         filteredList.remove(emp); // also remove from filtered list
-        Get.snackbar("Deleted", "${emp.name} removed successfully");
+        Get.snackbar(
+          "Deleted",
+          "${emp.name} removed successfully",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         log("Deleted Employee ID: ${emp.employeeId}");
       } else {
-        Get.snackbar("Failed", response.body["message"] ?? "Delete failed");
+        Get.snackbar(
+          "Failed",
+          response.body["message"] ?? "Delete failed",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         log("Delete failed: ${response.body}");
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to delete employee.");
+      Get.snackbar(
+        "Error",
+        "Failed to delete employee.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       log("Error in deleteEmployee: $e");
     } finally {
       isLoading.value = false;
@@ -215,16 +281,34 @@ class EmployeeListController extends GetxController {
           log("Employee Leaves fetched: ${employeeLeaves.length} records");
         } else {
           employeeLeaves.clear();
-          Get.snackbar("Info", "No leaves found for this employee.");
+          Get.snackbar(
+            "Info",
+            "No leaves found for this employee.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.grey,
+            colorText: Colors.white,
+          );
         }
       } else {
-        Get.snackbar("Error", "Failed to fetch employee leaves.");
+        Get.snackbar(
+          "Error",
+          "Failed to fetch employee leaves.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         log(
           "Failed to fetch leaves: ${response.statusCode} | ${response.statusText}",
         );
       }
     } catch (e) {
-      Get.snackbar("Error", "Something went wrong while fetching leaves.");
+      Get.snackbar(
+        "Error",
+        "Something went wrong while fetching leaves.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       log("Error in fetchEmployeeLeaves: $e");
     } finally {
       isLeaveLoading.value = false;
@@ -244,10 +328,22 @@ class EmployeeListController extends GetxController {
         log("Leave Types fetched: ${leaveTypes.length} records");
       } else {
         leaveTypes.clear();
-        Get.snackbar("Info", "No leave types found.");
+        Get.snackbar(
+          "Info",
+          "No leave types found.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.grey,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to fetch leave types.");
+      Get.snackbar(
+        "Error",
+        "Failed to fetch leave types.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       log("Error in fetchLeaveTypes: $e");
     } finally {
       isLeaveTypeLoading.value = false;
@@ -255,9 +351,12 @@ class EmployeeListController extends GetxController {
   }
 
   /// Set Default Employee
-  void setDefaultEmployee(Data emp) {
-    Get.snackbar("Default", "${emp.name} set as default");
-  }
+  // void setDefaultEmployee(Data emp) {
+  //   Get.snackbar("Default", "${emp.name} set as default",
+  //       snackPosition: SnackPosition.BOTTOM,
+  //       backgroundColor: Colors.
+  //   );
+  // }
 
   Future<bool> createLeave(LeaveModel leave) async {
     try {
@@ -285,6 +384,7 @@ class EmployeeListController extends GetxController {
           "Leave deleted successfully",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
         // Refresh employee leaves list
         await fetchEmployeeLeaves(empId);
@@ -294,6 +394,7 @@ class EmployeeListController extends GetxController {
           response.body["message"] ?? "Failed to delete leave",
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (e) {
@@ -302,6 +403,7 @@ class EmployeeListController extends GetxController {
         "Something went wrong: $e",
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isLeaveLoading(false);
@@ -347,6 +449,7 @@ class EmployeeListController extends GetxController {
           "Leave updated successfully",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
         // Refresh leave list
         await fetchEmployeeLeaves(empId);
@@ -364,6 +467,7 @@ class EmployeeListController extends GetxController {
         "Something went wrong: $e",
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       log("Error in updateLeaveController: $e");
     } finally {
@@ -382,7 +486,13 @@ class EmployeeListController extends GetxController {
       terminationTypes.assignAll(types);
       log("Termination Types fetched: ${terminationTypes.length} records");
     } catch (e) {
-      Get.snackbar("Error", "Failed to fetch termination types.");
+      Get.snackbar(
+        "Error",
+        "Failed to fetch termination types.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       log("Error in fetchTerminationTypes: $e");
     } finally {
       isTerminationTypeLoading.value = false;
@@ -412,17 +522,32 @@ class EmployeeListController extends GetxController {
 
       if (response.success == true) {
         terminations.add(response.data!);
-        Get.snackbar("Success", response.message ?? "Termination created");
+        Get.snackbar(
+          "Success",
+          response.message ?? "Termination created",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         log("Termination created: ${response.data}");
       } else {
         Get.snackbar(
           "Failed",
           response.message ?? "Failed to create termination",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
         log("Termination creation failed: ${response.message}");
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to create termination.");
+      Get.snackbar(
+        "Error",
+        "Failed to create termination.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       log("Error in createTerminationController: $e");
     } finally {
       isTerminationLoading.value = false;
@@ -478,17 +603,32 @@ class EmployeeListController extends GetxController {
 
       if (response.success == true) {
         resignations.add(response.data!);
-        Get.snackbar("Success", response.message ?? "Resignation created");
+        Get.snackbar(
+          "Success",
+          response.message ?? "Resignation created",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
         log("Resignation created: ${response.data}");
       } else {
         Get.snackbar(
           "Failed",
           response.message ?? "Failed to create resignation",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
         log("Resignation creation failed: ${response.message}");
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to create resignation.");
+      Get.snackbar(
+        "Error",
+        "Failed to create resignation.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       log("Error in createResignationController: $e");
     } finally {
       isResignationLoading.value = false;
@@ -527,7 +667,13 @@ class EmployeeListController extends GetxController {
         attendanceList.assignAll(records);
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to fetch attendance");
+      Get.snackbar(
+        "Error",
+        "Failed to fetch attendance",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       print("Fetch attendance error: $e");
     } finally {
       isLoadingAttendance.value = false;
