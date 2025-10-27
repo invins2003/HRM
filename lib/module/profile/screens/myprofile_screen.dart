@@ -49,27 +49,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: "Account Information",
                     children: [
                       _buildInfoTile(
-                          Icons.shield_outlined, "Role", profile.type),
-                      _buildInfoTile(Icons.toggle_on_outlined, "Status",
-                          profile.isActive == 1 ? "Active" : "Inactive"),
-                     Obx(() => _buildInfoTile(
-      Icons.person_add_alt_1_outlined,
-      "Created By",
-      controller.createdByName.value.isNotEmpty
-          ? controller.createdByName.value
-          : '-',
-)),
+                        Icons.shield_outlined,
+                        "Role",
+                        profile.type,
+                      ),
+                      _buildInfoTile(
+                        Icons.toggle_on_outlined,
+                        "Status",
+                        profile.isActive == 1 ? "Active" : "Inactive",
+                      ),
+                      Obx(
+                        () => _buildInfoTile(
+                          Icons.person_add_alt_1_outlined,
+                          "Created By",
+                          controller.createdByName.value.isNotEmpty
+                              ? controller.createdByName.value
+                              : '-',
+                        ),
+                      ),
                     ],
                   ),
                   _buildInfoCard(
                     title: "Preferences",
                     children: [
-                      _buildInfoTile(Icons.display_settings_outlined, "Mode",
-                          profile.mode),
-                      _buildInfoTile(Icons.dark_mode_outlined, "Dark Mode",
-                          profile.darkMode == true ? "Enabled" : "Disabled"),
-                      _buildInfoTile(Icons.color_lens_outlined,
-                          "Messenger Color", profile.messengerColor),
+                      _buildInfoTile(
+                        Icons.display_settings_outlined,
+                        "Mode",
+                        profile.mode,
+                      ),
+                      _buildInfoTile(
+                        Icons.dark_mode_outlined,
+                        "Dark Mode",
+                        profile.darkMode == true ? "Enabled" : "Disabled",
+                      ),
+                      _buildInfoTile(
+                        Icons.color_lens_outlined,
+                        "Messenger Color",
+                        profile.messengerColor,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -91,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         // The background container with original colors
         Container(
-          height: 200,
+          height: 100,
           decoration: BoxDecoration(
             color: Colors.green,
             borderRadius: const BorderRadius.only(
@@ -102,15 +119,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         // Positioned avatar to make it overlap
         Positioned(
-          top: 140, // (Header Height) - (Avatar Radius)
+          top: 55, // (Header Height) - (Avatar Radius)
           child: CircleAvatar(
             radius: 60,
             backgroundColor: Colors.white,
             child: CircleAvatar(
               radius: 55,
               backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  NetworkImage("${Constants.BASEURL}/${profile.avatar ?? ''}"),
+              backgroundImage: NetworkImage(
+                "${Constants.BASEURL}/${profile.avatar ?? ''}",
+              ),
               onBackgroundImageError: (_, __) {},
               child: profile.avatar == null
                   ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
@@ -138,18 +156,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 4),
           Text(
             profile.email ?? "No Email",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(
-      {required String title, required List<Widget> children}) {
+  Widget _buildInfoCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
@@ -211,8 +228,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: ElevatedButton.icon(
         onPressed: () {
-          Get.snackbar("Log Out", "Logout functionality coming soon!",
-              snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar(
+            "Log Out",
+            "Logout functionality coming soon!",
+            snackPosition: SnackPosition.BOTTOM,
+          );
         },
         icon: const Icon(Icons.logout, color: Colors.white),
         label: const Text("Log Out", style: TextStyle(color: Colors.white)),
