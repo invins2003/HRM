@@ -1,11 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:erp_admin/module/EmployeeList&Profile/Controller/EmployeeProfileController/EmployeeProfileController.dart';
+import 'package:intl/intl.dart'; // <-- 1. IMPORT INTl PACKAGE
 
 class EmployeeProfileScreen extends StatelessWidget {
   final int employeeId;
 
   const EmployeeProfileScreen({super.key, required this.employeeId});
+
+  //  formatter:off
+  // 📅 HELPER FUNCTION FOR DATE ONLY (e.g., "29 Oct 2023")
+  String _formatDateOnly(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return "--";
+    }
+    try {
+      // Parse the date string (assuming it's in a format DateTime.parse understands)
+      final DateTime dateTime = DateTime.parse(dateString);
+      // Format it as "Day Month Year"
+      return DateFormat('dd MMM yyyy').format(dateTime);
+    } catch (e) {
+      // If parsing fails, return the original string as a fallback
+      return dateString;
+    }
+  }
+
+  // 🕒 HELPER FUNCTION FOR DATE AND TIME (e.g., "29 Oct 2023, 1:50 PM")
+  String _formatDateTime(String? dateTimeString) {
+    if (dateTimeString == null || dateTimeString.isEmpty) {
+      return "--";
+    }
+    try {
+      // Parse the timestamp
+      final DateTime dateTime = DateTime.parse(dateTimeString);
+      // Format it as "Day Month Year, Hour:Minute AM/PM"
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+    } catch (e) {
+      // If parsing fails, return the original string as a fallback
+      return dateTimeString;
+    }
+  }
+  // formatter:on
+
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +53,7 @@ class EmployeeProfileScreen extends StatelessWidget {
     controller.profileController(employeeId);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.green,
         elevation: 0,
@@ -53,11 +89,10 @@ class EmployeeProfileScreen extends StatelessWidget {
               _buildProfileHeader(profile),
 
               // 📑 Tab Bar
-              // 📑 Tab Bar
               Container(
                 color: Colors.white, // Background for the tab bar
                 child: TabBar(
-                  // isScrollable: true, // <--- ADD THIS LINE
+                  // isScrollable: true,
                   textScaler: TextScaler.linear(0.9),
                   labelColor: Colors.green.shade700,
                   unselectedLabelColor: Colors.grey.shade600,
@@ -80,7 +115,8 @@ class EmployeeProfileScreen extends StatelessWidget {
                     _buildInfoPage(
                       children: [
                         _infoCard(icon: Icons.badge, title: "Employee ID", value: profile.employeeId ?? "--"),
-                        _infoCard(icon: Icons.calendar_today, title: "Date of Birth", value: profile.dob ?? "--"),
+                        // <-- UPDATED HERE
+                        _infoCard(icon: Icons.calendar_today, title: "Date of Birth", value: _formatDateOnly(profile.dob)),
                         _infoCard(icon: Icons.person, title: "Gender", value: profile.gender ?? "--"),
                         _infoCard(icon: Icons.phone, title: "Phone", value: profile.phone ?? "--"),
                         _infoCard(icon: Icons.email, title: "Email", value: profile.email ?? "--"),
@@ -94,7 +130,8 @@ class EmployeeProfileScreen extends StatelessWidget {
                         _infoCard(icon: Icons.apartment, title: "Branch", value: profile.branch?.name ?? "--"),
                         _infoCard(icon: Icons.account_tree, title: "Department", value: profile.department?.name ?? "--"),
                         _infoCard(icon: Icons.work, title: "Designation", value: profile.designation?.name ?? "--"),
-                        _infoCard(icon: Icons.calendar_month, title: "Date of Joining", value: profile.companyDoj ?? "--"),
+                        // <-- UPDATED HERE
+                        _infoCard(icon: Icons.calendar_month, title: "Date of Joining", value: _formatDateOnly(profile.companyDoj)),
                         _infoCard(icon: Icons.monetization_on, title: "Salary Type", value: profile.salaryType ?? "--"),
                         _infoCard(icon: Icons.payments, title: "Salary", value: profile.salary ?? "--"),
                       ],
@@ -116,8 +153,10 @@ class EmployeeProfileScreen extends StatelessWidget {
                     _buildInfoPage(
                       children: [
                         _infoCard(icon: Icons.lock_outline, title: "Account Active", value: profile.isActive == true ? "Yes" : "No"),
-                        _infoCard(icon: Icons.schedule, title: "Created At", value: profile.createdAt ?? "--"),
-                        _infoCard(icon: Icons.update, title: "Updated At", value: profile.updatedAt ?? "--"),
+                        // <-- UPDATED HERE
+                        _infoCard(icon: Icons.schedule, title: "Created At", value: _formatDateTime(profile.createdAt)),
+                        // <-- UPDATED HERE
+                        _infoCard(icon: Icons.update, title: "Updated At", value: _formatDateTime(profile.updatedAt)),
                       ],
                     ),
                   ],
@@ -188,7 +227,7 @@ class EmployeeProfileScreen extends StatelessWidget {
   // 📄 Reusable Info Page (for tab content)
   Widget _buildInfoPage({required List<Widget> children}) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Column(
         children: children,
       ),
@@ -202,45 +241,50 @@ class EmployeeProfileScreen extends StatelessWidget {
     required String value,
     bool isMultiLine = false, // For long values like addresses
   }) {
-    return Card(
-      elevation: 2,
+    return Container(
+      // elevation: 2,
       color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.green.shade700, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title, // The label (e.g., "Email")
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
+      // margin: const EdgeInsets.only(),
+      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: Colors.green.shade700, size: 24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title, // The label (e.g., "Email")
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value, // The value (e.g., "test@example.com")
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        softWrap: isMultiLine,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value, // The value (e.g., "test@example.com")
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    softWrap: isMultiLine,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Divider()
+        ],
       ),
     );
   }
