@@ -24,6 +24,7 @@ class Expense {
   double? taxTotal;
   double? totalAmount;
   String? paymentsStatus;
+  String? paymentStatus;
   int? createdBy;
   int? categoryId;
   String? description;
@@ -48,6 +49,7 @@ class Expense {
     this.typeOfSupplOrService,
     this.totalAmount,
     this.paymentsStatus,
+    this.paymentStatus,
     this.createdBy,
     this.categoryId,
     this.description,
@@ -72,6 +74,7 @@ class Expense {
       taxTotal: json['tax_total'] != null ? double.tryParse(json['tax_total'].toString()) : null,
       totalAmount: json['total_amount'] != null ? double.tryParse(json['total_amount'].toString()) : null,
       paymentsStatus: json['payments_status'],
+      paymentStatus: json['payment_status'],      
       createdBy: json['created_by'],
       categoryId: json['category_id'],
       description: json['description'],
@@ -130,6 +133,7 @@ class Item {
   String? document;
   String? createdAt;
   String? updatedAt;
+  String? paymentDate;
 
   Item({
     this.id,
@@ -144,6 +148,7 @@ class Item {
     this.document,
     this.createdAt,
     this.updatedAt,
+    this.paymentDate
   });
 
   factory Item.fromJson(Map<String, dynamic> json) {
@@ -160,6 +165,7 @@ class Item {
       document: json['document'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
+      paymentDate: json["payment_date"]
     );
   }
 }

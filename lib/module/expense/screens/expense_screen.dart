@@ -641,7 +641,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                                             .paymentDate!
                                                             .isNotEmpty
                                                     ? "• ${DateFormat('dd MMM yyyy').format(DateTime.parse(record.paymentDate!))}"
-                                                    : "",
+                                                    : "• Not Paid",
                                                 style: TextStyle(
                                                   color: Colors.grey.shade600,
                                                   fontSize: 12,
@@ -651,19 +651,9 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                           ),
                                         ),
                                         Icon(
-                                          (record.paymentsStatus
-                                                          ?.toLowerCase() ??
-                                                      "") ==
-                                                  "paid"
-                                              ? Icons.check_circle
-                                              : Icons.pending,
-                                          color:
-                                              (record.paymentsStatus
-                                                          ?.toLowerCase() ??
-                                                      "") ==
-                                                  "paid"
-                                              ? Colors.green
-                                              : Colors.orange,
+                                          (record.paymentsStatus?.toLowerCase() ?? record.paymentStatus?.toLowerCase()) ==  "paid" ? Icons.check_circle : Icons.pending,
+                                          color: (record.paymentsStatus?.toLowerCase() ?? record.paymentStatus?.toLowerCase()) == "paid"? Colors.green : Colors.orange,
+
                                         ),
                                       ],
                                     ),
