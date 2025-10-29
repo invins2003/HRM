@@ -17,7 +17,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     controller = Get.put(ProfileController());
-    controller.fetchProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchProfile();
+    });
   }
 
   @override
