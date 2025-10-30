@@ -486,15 +486,15 @@ void _showResignationDialog(
                         description: descriptionController.text.trim(),
                       );
 
-                      // ✅ Show success snackbar at bottom
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Resignation submitted successfully ✅"),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.fixed, // bottom position
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      // // ✅ Show success snackbar at bottom
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text("Resignation submitted successfully ✅"),
+                      //     backgroundColor: Colors.green,
+                      //     behavior: SnackBarBehavior.fixed, // bottom position
+                      //     duration: Duration(seconds: 2),
+                      //   ),
+                      // );
 
                       Get.back(); // close dialog
                     },
@@ -875,14 +875,14 @@ void _showTerminationDialog(
 
                     Get.back();
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Termination submitted successfully ✅"),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.fixed,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text("Termination submitted successfully ✅"),
+                    //     backgroundColor: Colors.green,
+                    //     behavior: SnackBarBehavior.fixed,
+                    //     duration: Duration(seconds: 2),
+                    //   ),
+                    // );
                   },
                   child: const Text("Submit"),
                 ),
@@ -1258,14 +1258,14 @@ void _showEarlyLeaveDialog(
                     Get.back();
 
                     // ✅ Success Snackbar (bottom)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Early leave submitted successfully ✅"),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.fixed,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text("Early leave submitted successfully ✅"),
+                    //     backgroundColor: Colors.green,
+                    //     behavior: SnackBarBehavior.fixed,
+                    //     duration: Duration(seconds: 2),
+                    //   ),
+                    // );
                   },
                   child: const Text("Submit"),
                 ),
@@ -1608,14 +1608,14 @@ void _showOverTimeDialog(
                     Get.back();
 
                     // ✅ Success Snackbar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Overtime submitted successfully ✅"),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.fixed,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text("Overtime submitted successfully ✅"),
+                    //     backgroundColor: Colors.green,
+                    //     behavior: SnackBarBehavior.fixed,
+                    //     duration: Duration(seconds: 2),
+                    //   ),
+                    // );
                   },
                   child: const Text("Submit"),
                 ),
@@ -2037,20 +2037,20 @@ void _showManageAttendanceDialog(
 
                     Get.back();
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Attendance marked as ${statusController.value} ✅",
-                        ),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.only(
-                          bottom: 16,
-                          left: 16,
-                          right: 16,
-                        ),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   SnackBar(
+                    //     content: Text(
+                    //       "Attendance marked as ${statusController.value} ✅",
+                    //     ),
+                    //     backgroundColor: Colors.green,
+                    //     behavior: SnackBarBehavior.floating,
+                    //     margin: const EdgeInsets.only(
+                    //       bottom: 16,
+                    //       left: 16,
+                    //       right: 16,
+                    //     ),
+                    //   ),
+                    // );
                   },
                   child: const Text("Submit"),
                 ),
