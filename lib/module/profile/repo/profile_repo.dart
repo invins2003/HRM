@@ -1,6 +1,9 @@
 import 'package:erp_admin/module/profile/model/profile_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
+import 'package:get/get.dart';
+
+import '../model/branch_model.dart';
 
 class ProfileRepo {
   final ApiClient apiClient = ApiClient(appBaseUrl: Constants.BASEURL);
@@ -40,4 +43,29 @@ class ProfileRepo {
       return "Unknown";
     }
   }
+
+  /// ✅ Get Branch List API
+Future<List<Branch>> getBranchDetail() async {
+  final response = await apiClient.getData("/api/branches");
+  print("Branch API Response: ${response.bodyString}");
+
+  if (response.statusCode == 200) {
+    final body = response.body;
+
+    if (body['data'] != null && body['data'] is List) {
+      return (body['data'] as List)
+          .map((e) => Branch.fromJson(e))
+          .toList();
+    } else {
+      throw Exception("Invalid branch data format");
+    }
+  } else {
+    String errorMsg = "Failed to fetch branches";
+    if (response.body is Map && response.body['message'] != null) {
+      errorMsg = response.body['message'];
+    }
+    throw Exception(errorMsg);
+  }
+}
+
 }
