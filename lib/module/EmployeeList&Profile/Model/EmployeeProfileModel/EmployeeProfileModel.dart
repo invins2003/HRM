@@ -53,6 +53,13 @@ class Data {
   Branch? branch;
   Branch? department;
   Branch? designation;
+  String? skill;
+  String? uanNumber;
+  String? rejoinReason;
+  String? ipNumber;
+  String? fatherName;
+  String? aadhaarNumber;
+  String? employeeType;
 
   Data({
     this.id,
@@ -88,6 +95,14 @@ class Data {
     this.branch,
     this.department,
     this.designation,
+    this.skill,
+    this.ipNumber,
+    this.rejoinReason,
+    this.uanNumber,
+    this.fatherName,
+    this.aadhaarNumber,
+    this.employeeType,
+
   });
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -101,6 +116,14 @@ class Data {
     email = json['email'];
     password = json['password'];
     employeeId = json['employee_id'];
+    skill=json['skill'];
+    ipNumber=json['ip_number'];
+    rejoinReason=json["rejoin_reason"];
+    uanNumber = json['uan_number'];
+    fatherName = json['father_name'];
+    employeeType = json["employee_type"];
+    aadhaarNumber = json['aadhaar_number'];
+
 
     // ✅ handle biometric_emp_id as List<List<double>>
     if (json['biometric_emp_id'] != null) {

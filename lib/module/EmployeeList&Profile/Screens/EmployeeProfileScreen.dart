@@ -116,24 +116,34 @@ class EmployeeProfileScreen extends StatelessWidget {
                       children: [
                         _infoCard(icon: Icons.badge, title: "Employee ID", value: profile.employeeId ?? "--"),
                         // <-- UPDATED HERE
+                        _infoCard(icon: Icons.numbers_sharp, title: "Employee Type", value: profile.employeeType ?? "--"),
                         _infoCard(icon: Icons.calendar_today, title: "Date of Birth", value: _formatDateOnly(profile.dob)),
+                        _infoCard(icon: Icons.person_2_rounded, title: "Father's Name", value: profile.fatherName ?? "--"),
                         _infoCard(icon: Icons.person, title: "Gender", value: profile.gender ?? "--"),
                         _infoCard(icon: Icons.phone, title: "Phone", value: profile.phone ?? "--"),
                         _infoCard(icon: Icons.email, title: "Email", value: profile.email ?? "--"),
                         _infoCard(icon: Icons.home, title: "Address", value: profile.address ?? "--", isMultiLine: true),
+                        _infoCard(icon: Icons.numbers, title: "UAN Number", value: profile.uanNumber ?? "--"),
+                        _infoCard(icon: Icons.numbers_sharp, title: "IP Number", value: profile.ipNumber ?? "--"),
+                        _infoCard(icon: Icons.perm_identity_rounded, title: "Aadhaar Number", value: profile.aadhaarNumber ?? "--"),
+                        
+
                       ],
                     ),
 
                     // 2. Company Info Page
                     _buildInfoPage(
                       children: [
-                        _infoCard(icon: Icons.apartment, title: "Branch", value: profile.branch?.name ?? "--"),
+                        _infoCard(icon: Icons.apartment, title: "Site", value: profile.branch?.name ?? "--"),
                         _infoCard(icon: Icons.account_tree, title: "Department", value: profile.department?.name ?? "--"),
                         _infoCard(icon: Icons.work, title: "Designation", value: profile.designation?.name ?? "--"),
                         // <-- UPDATED HERE
                         _infoCard(icon: Icons.calendar_month, title: "Date of Joining", value: _formatDateOnly(profile.companyDoj)),
                         _infoCard(icon: Icons.monetization_on, title: "Salary Type", value: profile.salaryType ?? "--"),
                         _infoCard(icon: Icons.payments, title: "Salary", value: profile.salary ?? "--"),
+                        _infoCard(icon: Icons.directions_walk_outlined, title: "Rejoin Reason", value: profile.rejoinReason ?? "--",isMultiLine: true),
+
+
                       ],
                     ),
 
@@ -235,12 +245,21 @@ class EmployeeProfileScreen extends StatelessWidget {
   }
 
   // 📇 Reusable Info Card (Redesigned)
+  // 📇 Reusable Info Card (Redesigned)
   Widget _infoCard({
     required IconData icon,
     required String title,
     required String value,
     bool isMultiLine = false, // For long values like addresses
   }) {
+    // 🔽 --- ADD THIS CHECK --- 🔽
+    // If the value is the placeholder, don't render anything.
+    if (value == "--") {
+      return const SizedBox.shrink();
+    }
+    // 🔼 --- END OF ADDITION --- 🔼
+
+    // If the value is valid, build the card as before.
     return Container(
       // elevation: 2,
       color: Colors.white,
@@ -283,9 +302,9 @@ class EmployeeProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          Divider()
+          const Divider() // This divider will now only appear if the card is shown
         ],
       ),
     );
   }
-}
+}  

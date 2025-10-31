@@ -3,6 +3,8 @@ import 'package:erp_admin/module/profile/repo/profile_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../model/branch_model.dart';
+
 class ProfileController extends GetxController {
   final ProfileRepo profileRepo = ProfileRepo();
 
@@ -36,6 +38,23 @@ class ProfileController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  RxBool isBranchLoading = false.obs;
+  RxList<Branch> branchList = <Branch>[].obs;
+    /// ✅ Fetch Branch List
+  Future<void> fetchBranch() async {
+    try {
+      isBranchLoading.value = true;
+      branchList.value = await profileRepo.getBranchDetail();
+    } catch (e) {
+      Get.snackbar("Error", "Failed to load branches: $e",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+    } finally {
+      isBranchLoading.value = false;
     }
   }
 }
