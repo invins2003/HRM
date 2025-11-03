@@ -295,14 +295,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (controller.branchList.isEmpty) {
         return _buildInfoCard(
-          title: "Branch",
+          title: "Site",
           children: const [
             ListTile(
               leading: Icon(
                 Icons.store_mall_directory_outlined,
                 color: Colors.green,
               ),
-              title: Text("No branches assigned"),
+              title: Text("No Site assigned"),
             ),
           ],
         );
@@ -316,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Padding(
             padding: EdgeInsets.fromLTRB(24.0, 10.0, 24.0, 10.0),
             child: Text(
-              "Assigned Branch", // Changed from "Branches"
+              "Assigned Site", // Changed from "Branches"
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
