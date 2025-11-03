@@ -1,3 +1,5 @@
+// [FaceNetService class remains unchanged as provided in your prompt]
+// ... (Your FaceNetService code) ...
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -7,6 +9,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
+// Your FaceNetService class (unchanged)
 class FaceNetService {
   Interpreter? _interpreter;
   Future<void> loadModel() async {
@@ -47,6 +50,10 @@ class FaceNetService {
 
   void dispose() => _interpreter?.close();
 }
+// [End of FaceNetService class]
+
+
+// --- CORRECTED STATE CLASS ---
 
 class FaceProcessingScreen extends StatefulWidget {
   final int maxCaptures;
@@ -75,10 +82,14 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   final List<List<double>> _capturedEmbeddings = [];
 
   bool _loading = true;
-  String _message = "Show your face and tap capture";
+  String _message = "Show your face to capture"; // Updated initial message
 
   CameraDescription? _currentCamera;
   List<CameraDescription>? _availableCameras;
+
+  // Flags to control processing
+  bool _isProcessingStream = false;
+  bool _isCapturing = false;
 
   @override
   void initState() {
@@ -91,40 +102,174 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     await _facenet.loadModel();
 
     _availableCameras = await availableCameras();
-    _currentCamera = widget.camera;
+    
+    // --- DEFAULT TO FRONT CAMERA ---
+    try {
+      // Find the front camera
+      _currentCamera = _availableCameras?.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+      );
+    } catch (e) {
+      // If front camera not found, fallback to widget.camera or first available
+      _currentCamera = widget.camera ?? _availableCameras?.first;
+    }
+    // ----------------------------------------
+
+    if (_currentCamera == null) {
+      debugPrint("Error: No cameras available.");
+      setState(() => _loading = false);
+      return;
+    }
 
     _cameraController = CameraController(
       _currentCamera!,
       ResolutionPreset.medium,
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.yuv420,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21 // Request NV21
+          : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
+
+    // Start the image stream for live feedback
+    await _cameraController!.startImageStream(_onImageStream);
+
     setState(() => _loading = false);
+  }
+
+  // Handle image stream for live detection feedback
+  Future<void> _onImageStream(CameraImage image) async {
+    if (_isProcessingStream || _isCapturing) return;
+    if (_capturedEmbeddings.length >= widget.maxCaptures) {
+      await _cameraController?.stopImageStream();
+      return;
+    }
+
+    _isProcessingStream = true;
+
+    try {
+      final inputImage = _createInputImageFromCameraImage(image);
+      if (inputImage == null) {
+        _isProcessingStream = false;
+        return;
+      }
+
+      final faces = await _faceDetector.processImage(inputImage);
+
+      // --- AUTOMATIC CAPTURE ENABLED ---
+      if (faces.isNotEmpty && mounted && !_isCapturing) {
+        // Face detected!
+        setState(() {
+          _message = "✅ Face detected! Stand still...";
+        });
+        // Trigger the high-res capture
+        await _captureFace(); // This line is restored
+      } else if (mounted && !_isCapturing) {
+        // Update message to show "looking"
+        setState(() {
+          _message = "Show your face to capture";
+        });
+      }
+      // -------------------------------------------
+
+    } catch (e) {
+      debugPrint("Error in image stream processing: $e");
+    } finally {
+      _isProcessingStream = false;
+    }
+  }
+
+  // Helper to create InputImage from CameraImage
+  InputImage? _createInputImageFromCameraImage(CameraImage image) {
+    if (_cameraController == null) return null;
+    
+    // Tell ML Kit the format is NV21
+    final InputImageFormat format = Platform.isAndroid
+        ? InputImageFormat.nv21
+        : InputImageFormat.bgra8888;
+
+    // --- THIS IS THE FIX ---
+    // Check for the format we actually requested (nv21)
+    if (image.format.group != (Platform.isAndroid 
+          ? ImageFormatGroup.nv21 // <--- MUST MATCH WHAT WE REQUESTED
+          : ImageFormatGroup.bgra8888)) {
+      debugPrint("Unexpected image format ${image.format.group}");
+      return null;
+    }
+    // -----------------------
+
+    final allBytes = WriteBuffer();
+    for (final Plane plane in image.planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    final bytes = allBytes.done().buffer.asUint8List();
+
+    final rotation = _getInputImageRotation();
+
+    final metadata = InputImageMetadata(
+      size: Size(image.width.toDouble(), image.height.toDouble()),
+      rotation: rotation,
+      format: format, // Use InputImageFormat.nv21
+      bytesPerRow: image.planes[0].bytesPerRow,
+    );
+
+    return InputImage.fromBytes(bytes: bytes, metadata: metadata);
+  }
+
+  // Helper for rotation
+  InputImageRotation _getInputImageRotation() {
+    final camera = _currentCamera!;
+    final sensorOrientation = camera.sensorOrientation;
+    switch (sensorOrientation) {
+      case 90:
+        return InputImageRotation.rotation90deg;
+      case 180:
+        return InputImageRotation.rotation180deg;
+      case 270:
+        return InputImageRotation.rotation270deg;
+      default:
+        return InputImageRotation.rotation0deg;
+    }
   }
 
   Future<void> _switchCamera() async {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
 
-    final currentIndex = _availableCameras!.indexOf(_currentCamera!);
-    final newIndex = (currentIndex + 1) % _availableCameras!.length;
-    _currentCamera = _availableCameras![newIndex];
-
+    // Stop stream before disposing
+    await _cameraController?.stopImageStream();
     await _cameraController?.dispose();
+
+    // Find the *other* camera
+    _currentCamera = _availableCameras!.firstWhere(
+      (cam) => cam.lensDirection != _currentCamera!.lensDirection,
+      orElse: () => _availableCameras!.first, // fallback
+    );
+
     _cameraController = CameraController(
       _currentCamera!,
       ResolutionPreset.medium,
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.yuv420,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21 // Also apply here
+          : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
+
+    // Restart the stream
+    await _cameraController!.startImageStream(_onImageStream);
+
     setState(() {});
   }
 
+  // This function is now called automatically OR by the button
   Future<void> _captureFace() async {
     if (_capturedEmbeddings.length >= widget.maxCaptures) return;
+    if (_isCapturing) return; // Prevent concurrent captures
+    if (_cameraController == null) return;
+
+    setState(() => _isCapturing = true);
 
     try {
       final cameraImage = await _cameraController!.takePicture();
@@ -156,7 +301,11 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         if (embedding != null) {
           _capturedEmbeddings.add(embedding);
           if (_capturedEmbeddings.length >= widget.maxCaptures) {
-            Navigator.pop(context, _capturedEmbeddings);
+            // Stop stream when done
+            await _cameraController?.stopImageStream();
+            if(mounted) {
+              Navigator.pop(context, _capturedEmbeddings);
+            }
           }
         }
       } else {
@@ -166,11 +315,19 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       }
     } catch (e) {
       debugPrint("Error capturing face: $e");
+    } finally {
+      if(mounted) {
+         // Add a small delay before allowing another auto-capture
+         await Future.delayed(const Duration(milliseconds: 500));
+         setState(() => _isCapturing = false); // Clear flag
+      }
     }
   }
 
   @override
   void dispose() {
+    // Stop stream before disposing controller
+    _cameraController?.stopImageStream();
     _cameraController?.dispose();
     _faceDetector.close();
     _facenet.dispose();
@@ -184,14 +341,18 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.green)),
       );
     }
+    
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return const Scaffold(
+        body: Center(child: Text("Error: Camera not initialized.")),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_cameraController != null &&
-              _cameraController!.value.isInitialized)
-            CameraPreview(_cameraController!), // Keep camera preview same
+          CameraPreview(_cameraController!), // Camera preview
           // Overlay message
           Positioned(
             bottom: 120,
@@ -229,7 +390,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _captureFace,
+        onPressed: _captureFace, // Button still works for manual capture
         label: const Text(
           "Capture Face",
           style: TextStyle(color: Colors.white),
