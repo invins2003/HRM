@@ -102,7 +102,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
               ),
             ],
           ),
-          if(expense.paymentsStatus != null)
+          if(expense.paymentsStatus != null  || expense.paymentStatus != null)
           Positioned(top: -12, right: -12, child: _buildStatusBadge()),
         ],
       ),
@@ -110,7 +110,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildStatusBadge() {
-    final status = expense.paymentsStatus?.toLowerCase() ?? "";
+    final status = expense.paymentsStatus?.toLowerCase() ?? expense.paymentStatus?.toLowerCase();
     Color badgeColor;
     IconData badgeIcon;
 
@@ -150,7 +150,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
           Icon(badgeIcon, color: Colors.white, size: 16),
           const SizedBox(width: 6),
           Text(
-            expense.paymentsStatus?.toUpperCase() ?? "N/A",
+            expense.paymentsStatus?.toUpperCase() ?? expense.paymentStatus!.toUpperCase(),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

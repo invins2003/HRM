@@ -13,10 +13,12 @@ import 'module/MainScreen/MainScreen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EnvConfig.load();
-  // await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
+  await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight
   ]);
   await dep.init();
   runApp(const MyApp());

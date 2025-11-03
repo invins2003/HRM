@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:ui' as BorderType;
 import 'package:erp_admin/module/expense/controller/expense_controller.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:dotted_border/dotted_border.dart';
 
 class LogExpenseScreen extends StatefulWidget {
   const LogExpenseScreen({super.key});
@@ -29,18 +32,18 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
 
   int? selectedCategoryId;
   bool isTaxable = false;
-  File? selectedDocument;
+  // File? selectedDocument; //filess
   String taxType = "exclusive"; // default value
 
   List<Item> items = [];
 
   double get totalExpense => items.fold(
-        0,
-        (sum, item) =>
-            sum +
-            item.subtotal +
-            (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0),
-      );
+    0,
+    (sum, item) =>
+        sum +
+        item.subtotal +
+        (item.isTaxable ? item.subtotal * item.taxRate / 100 : 0),
+  );
 
   @override
   void initState() {
@@ -49,6 +52,182 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       expenseController.fetchExpenseCategories();
     }
   }
+  //Botoom Sheet   ---->>>> ........................................
+
+    File? selectedDocument; //filess
+    bool isPDF = false;
+    ImageProvider? displayImage;
+
+    final ImagePicker _picer = ImagePicker();
+
+    void _openBottomSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) {
+          File? tempDocument = selectedDocument; // temporary variable
+
+          return StatefulBuilder(
+            builder: (context, setStateSheet) {
+              return Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Pick File", style: TextStyle(fontSize: 18)),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Updated Dotted Border
+                    // Updated Dotted Border
+              DottedBorder(
+                options: RoundedRectDottedBorderOptions(
+                  radius: BorderType.Radius.circular(10), // Your radius
+                  dashPattern: const [6, 3],
+                  color: Colors.grey,
+                  strokeWidth: 2,
+                ),
+                child: ClipRRect( // <-- ADD THIS WIDGET
+                  borderRadius: BorderRadius.circular(10), // <-- MATCH THE RADIUS
+                  child: Container(
+                    height: 200,
+                    width: double.infinity,
+                    alignment: Alignment.center,
+                    child: tempDocument == null
+                        ? const Text("No Preview Available")
+                        : Stack(
+                            children: [
+                              Center(
+                                child: tempDocument!.path.endsWith(".pdf")
+                                    ? const Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Colors.red,
+                                        size: 50,
+                                      )
+                                    : Image.file(
+                                        tempDocument!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: 200, // Ensure image fills the container height too
+                                      ),
+                              ),
+                              // close button inside dotted border
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: InkWell(
+                                  onTap: () {
+                                    setStateSheet(() {
+                                      tempDocument = null;
+                                    });
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: Colors.red,
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ), // <-- END ClipRRect
+              ),
+
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final XFile? image = await _picer.pickImage(
+                                source: ImageSource.camera,
+                              );
+                              if (image != null) {
+                                setStateSheet(() {
+                                  tempDocument = File(image.path);
+                                });
+                              }
+                            },
+                            child: const Text("Pick Image"),
+                          ),
+                        ),
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              FilePickerResult? result = await FilePicker.platform
+                                  .pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: [
+                                      'pdf',
+                                      'jpg',
+                                      'jpeg',
+                                      'png',
+                                    ],
+                                  );
+                              if (result != null &&
+                                  result.files.single.path != null) {
+                                setStateSheet(() {
+                                  tempDocument = File(result.files.single.path!);
+                                });
+                              }
+                            },
+                            child: const Text("Pick Document"),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Submit Button
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: tempDocument == null
+                                ? null
+                                : () {
+                                    setState(() {
+                                      selectedDocument =
+                                          tempDocument; // ✅ Save selected file permanently
+                                    });
+                                    Navigator.pop(context); // Close bottom sheet
+                          
+                                    // Get.snackbar(
+                                    //   "Success",
+                                    //   "File selected successfully ✅",
+                                    //   backgroundColor: Colors.green,
+                                    //   colorText: Colors.white,
+                                    //   snackPosition: SnackPosition.BOTTOM,
+                                    // );
+                                  },
+                            child: const Text("Submit"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
 
   // --- Dispose controllers ---
   @override
@@ -78,8 +257,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
         Get.snackbar(
           "File Too Large",
           "Please select a file smaller than 5 MB.",
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red.shade900,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
         return;
       }
@@ -95,8 +275,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "Enter item name and subtotal",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -105,8 +286,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "Enter tax rate for taxable item",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -146,8 +328,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "No File",
         "There is no file to open.",
-        backgroundColor: Colors.orange.withOpacity(0.1),
-        colorText: Colors.orange.shade900,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -157,8 +340,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "File not found.",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
@@ -168,8 +352,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "Please enter description and select category",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -179,8 +364,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "For credit purchase, please enter Vendor Name and Type of Purchase",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -189,8 +375,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       Get.snackbar(
         "Error",
         "Please add at least one item",
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red.shade900,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -232,16 +419,18 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
       files: fileMap,
       purchaseType: _purchaseType,
       vendorName: _purchaseType == "credit" ? _vendorNameController.text : null,
-      creditPurchaseType:
-          _purchaseType == "credit" ? _creditPurchaseType : null,
+      creditPurchaseType: _purchaseType == "credit"
+          ? _creditPurchaseType
+          : null,
     );
 
     if (expenseController.expenseResponse.value?.success == true) {
       Get.snackbar(
         "Success",
         "Expense logged successfully ✅",
-        backgroundColor: Colors.green.withOpacity(0.2),
-        colorText: Colors.green.shade800,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       Navigator.pop(context, true);
     }
@@ -286,12 +475,17 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                 alignment: Alignment.center,
                 child: () {
                   if (document == null) {
-                    return const Icon(Icons.insert_drive_file_outlined,
-                        color: Colors.grey);
+                    return const Icon(
+                      Icons.insert_drive_file_outlined,
+                      color: Colors.grey,
+                    );
                   }
                   if (document.path.endsWith(".pdf")) {
-                    return const Icon(Icons.picture_as_pdf,
-                        color: Colors.red, size: 30);
+                    return const Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.red,
+                      size: 30,
+                    );
                   }
                   return Image.file(
                     document,
@@ -345,10 +539,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
               DropdownButtonFormField<String>(
                 value: _purchaseType,
                 items: const [
-                  DropdownMenuItem(
-                    value: "cash",
-                    child: Text("Cash Purchase"),
-                  ),
+                  DropdownMenuItem(value: "cash", child: Text("Cash Purchase")),
                   DropdownMenuItem(
                     value: "credit",
                     child: Text("Credit Purchase"),
@@ -379,14 +570,8 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                   value: _creditPurchaseType,
                   hint: const Text("Select Purchase Type"),
                   items: const [
-                    DropdownMenuItem(
-                      value: "service",
-                      child: Text("Service"),
-                    ),
-                    DropdownMenuItem(
-                      value: "supply",
-                      child: Text("Supply"),
-                    ),
+                    DropdownMenuItem(value: "service", child: Text("Service")),
+                    DropdownMenuItem(value: "supply", child: Text("Supply")),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -447,13 +632,10 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                     children: [
                       Text(
                         "Add New Item",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade700,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade700,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
@@ -521,8 +703,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                                 onTap: () =>
                                     _openSelectedFile(selectedDocument),
                                 borderRadius: BorderRadius.circular(8),
-                                child:
-                                    _buildDocumentPreview(selectedDocument),
+                                child: _buildDocumentPreview(selectedDocument),
                               ),
                               if (selectedDocument != null)
                                 Positioned(
@@ -537,8 +718,11 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                                     child: CircleAvatar(
                                       radius: 10,
                                       backgroundColor: Colors.red,
-                                      child: const Icon(Icons.close,
-                                          size: 12, color: Colors.white),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 12,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -547,7 +731,7 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextButton.icon(
-                              onPressed: _pickFile,
+                              onPressed: _openBottomSheet,
                               icon: const Icon(Icons.attach_file),
                               label: Text(
                                 selectedDocument == null
@@ -561,8 +745,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -625,26 +810,31 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                             ),
                             title: Text(
                               item.itemName,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                    "Subtotal: ₹${item.subtotal.toStringAsFixed(2)}"),
+                                  "Subtotal: ₹${item.subtotal.toStringAsFixed(2)}",
+                                ),
                                 if (item.isTaxable)
                                   Text(
                                     "Tax: ${item.taxRate}% (${item.taxType})",
                                     style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade700),
+                                      fontSize: 12,
+                                      color: Colors.grey.shade700,
+                                    ),
                                   ),
                               ],
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete_outline,
-                                  color: Colors.red.shade700),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                color: Colors.red.shade700,
+                              ),
                               onPressed: () => _deleteItem(index),
                             ),
                             isThreeLine: item.isTaxable,
@@ -660,9 +850,9 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
                 Text(
                   "Total: ₹${totalExpense.toStringAsFixed(2)}",
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
                 ),
               const SizedBox(height: 24),
 

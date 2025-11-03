@@ -13,7 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   get:
   http:
-  fluttertoast: ^9.0.0
+#  fluttertoast: ^9.0.0
   local_auth: ^2.3.0
   flutter_native_splash: ^2.4.6
   logger:
@@ -35,6 +35,10 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^31.1.23
   http_parser: ^4.1.2
   open_filex: ^4.7.0
+  image_picker: ^1.2.0
+  dotted_border: ^3.1.0
+
+
 
 dev_dependencies:
   flutter_test:

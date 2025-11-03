@@ -156,6 +156,7 @@ class _MainscreenState extends State<Mainscreen> {
         onWillPop: _onWillPop,
         child: Scaffold(
           appBar: AppBar(
+            surfaceTintColor: Colors.green,
             automaticallyImplyLeading: false,
             title: Text(
               _screenTitles[_selectedIndex],

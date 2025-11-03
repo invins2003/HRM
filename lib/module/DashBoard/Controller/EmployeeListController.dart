@@ -3,7 +3,6 @@ import 'package:erp_admin/module/DashBoard/Model/attendence_request_model.dart';
 import 'package:erp_admin/module/DashBoard/Model/present_employee_model.dart';
 import 'package:erp_admin/module/DashBoard/Repo/EmployeeListRepo.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:intl/intl.dart';
@@ -39,14 +38,19 @@ class DashBoardEmployeeList extends GetxController {
         }
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error : ${e}');
+      Get.snackbar(
+        "Error",
+        "$e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> presentListtController(DateTime date) async {
-    
     try {
       isLoading.value = true;
       attendanceList.clear();
@@ -65,32 +69,46 @@ class DashBoardEmployeeList extends GetxController {
           // Convert AttendanceData.employee to Data for biometric tracking
           for (var empAttendance in listModel.data!) {
             if (empAttendance.employee != null) {
-              biometricPending.add(Data(
-                id: empAttendance.employee!.id,
-                name: empAttendance.employee!.name,
-                employeeId: empAttendance.employee!.employeeId,
-                email: null,
-                employeeType: empAttendance.employee!.employeeType
-              ));
+              biometricPending.add(
+                Data(
+                  id: empAttendance.employee!.id,
+                  name: empAttendance.employee!.name,
+                  employeeId: empAttendance.employee!.employeeId,
+                  email: null,
+                  employeeType: empAttendance.employee!.employeeType,
+                ),
+              );
             }
           }
         }
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Error : $e');
+      Get.snackbar(
+        "Error",
+        "$e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> verifyAttendance(List<double> embedding, String employeeId) async {
+  Future<void> verifyAttendance(
+    List<double> embedding,
+    String employeeId,
+  ) async {
     try {
       final request = AttendanceRequest(
         embedding: embedding,
         timestamp: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
       );
 
-      final response = await employeeListRepo.verifyAttendance(request, employeeId);
+      final response = await employeeListRepo.verifyAttendance(
+        request,
+        employeeId,
+      );
 
       if (response.statusCode == 200) {
         Get.snackbar(
@@ -120,45 +138,47 @@ class DashBoardEmployeeList extends GetxController {
     }
   }
 
-
   Future<void> deleteEmployeeAttendance(String attendanceId) async {
-  try {
-    isLoading.value = true;
-    final response = await employeeListRepo.deleteEmployeeAttendenceRepo(attendanceId);
-
-    if (response.statusCode == 200) {
-      Get.snackbar(
-        "Deleted ✅",
-        "Attendance record removed successfully",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
+    try {
+      isLoading.value = true;
+      final response = await employeeListRepo.deleteEmployeeAttendenceRepo(
+        attendanceId,
       );
 
-      // Remove from local list without reloading API
-      attendanceList.removeWhere((item) => item.id.toString() == attendanceId);
-    } else {
+      if (response.statusCode == 200) {
+        Get.snackbar(
+          "Deleted ✅",
+          "Attendance record removed successfully",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Remove from local list without reloading API
+        attendanceList.removeWhere(
+          (item) => item.id.toString() == attendanceId,
+        );
+      } else {
+        Get.snackbar(
+          "Delete Failed ❌",
+          response.body["message"] ?? "Something went wrong",
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
       Get.snackbar(
-        "Delete Failed ❌",
-        response.body["message"] ?? "Something went wrong",
+        "Error",
+        "Failed to delete attendance: $e",
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
+    } finally {
+      isLoading.value = false;
     }
-  } catch (e) {
-    Get.snackbar(
-      "Error",
-      "Failed to delete attendance: $e",
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  } finally {
-    isLoading.value = false;
   }
-}
-
 
   String checkBiometricStatus(int empId) {
     return biometricRegistered.containsKey(empId)

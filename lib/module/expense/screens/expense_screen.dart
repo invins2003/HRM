@@ -39,10 +39,179 @@ class _ExpenseScreenState extends State<ExpenseScreen>
     expenseController.fetchExpenseCategories();
   }
 
-  /// Expense Request Dialog
+  // /// Expense Request Dialog
+  // void showRequestDialog() {
+  //   final TextEditingController amountController = TextEditingController();
+  //   final TextEditingController purposeController = TextEditingController();
+  //
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return StatefulBuilder(
+  //         builder: (context, setStateDialog) {
+  //           return AlertDialog(
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(20),
+  //             ),
+  //             title: const Text(
+  //               "Request Expense",
+  //               style: TextStyle(
+  //                 color: Colors.green,
+  //                 fontWeight: FontWeight.bold,
+  //                 fontSize: 20,
+  //               ),
+  //             ),
+  //             content: SingleChildScrollView(
+  //               child: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   TextField(
+  //                     controller: amountController,
+  //                     keyboardType: TextInputType.number,
+  //                     decoration: InputDecoration(
+  //                       prefixIcon: const Icon(
+  //                         Icons.currency_rupee,
+  //                         color: Colors.green,
+  //                       ),
+  //                       labelText: "Requested Amount",
+  //                       border: OutlineInputBorder(
+  //                         borderRadius: BorderRadius.circular(12),
+  //                       ),
+  //                       contentPadding: const EdgeInsets.symmetric(
+  //                         horizontal: 12,
+  //                         vertical: 10,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   TextField(
+  //                     controller: purposeController,
+  //                     decoration: InputDecoration(
+  //                       prefixIcon: const Icon(
+  //                         Icons.assignment,
+  //                         color: Colors.green,
+  //                       ),
+  //                       labelText: "Purpose / Reason",
+  //                       border: OutlineInputBorder(
+  //                         borderRadius: BorderRadius.circular(12),
+  //                       ),
+  //                       contentPadding: const EdgeInsets.symmetric(
+  //                         horizontal: 12,
+  //                         vertical: 10,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             actions: [
+  //               TextButton(
+  //                 onPressed: () => Navigator.pop(context),
+  //                 child: const Text(
+  //                   "Cancel",
+  //                   style: TextStyle(color: Colors.green),
+  //                 ),
+  //               ),
+  //               Obx(() {
+  //                 return ElevatedButton(
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.green,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(12),
+  //                     ),
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 20,
+  //                       vertical: 12,
+  //                     ),
+  //                   ),
+  //                   onPressed: expenseController.isLoading.value
+  //                       ? null
+  //                       : () async {
+  //                           /// Validate input
+  //                           if (amountController.text.isEmpty ||
+  //                               purposeController.text.isEmpty) {
+  //                             ScaffoldMessenger.of(context).showSnackBar(
+  //                               const SnackBar(
+  //                                 content: Text("Please fill all fields!"),
+  //                                 backgroundColor: Colors.red,
+  //                               ),
+  //                             );
+  //                             return;
+  //                           }
+  //
+  //                           final amount = double.tryParse(
+  //                             amountController.text,
+  //                           );
+  //                           if (amount == null || amount <= 0) {
+  //                             ScaffoldMessenger.of(context).showSnackBar(
+  //                               const SnackBar(
+  //                                 content: Text("Enter a valid amount!"),
+  //                                 backgroundColor: Colors.red,
+  //                               ),
+  //                             );
+  //                             return;
+  //                           }
+  //
+  //                           /// API call to request expense
+  //                           await expenseController.createFundRequest(
+  //                             amount: amount,
+  //                             reason: purposeController.text,
+  //                           );
+  //
+  //                           if (expenseController.fundRequest.value?.success ==
+  //                               true) {
+  //                             setState(() {
+  //                               expenseRequests.add({
+  //                                 "amount": amount,
+  //                                 "purpose": purposeController.text,
+  //                                 "status": "Pending",
+  //                               });
+  //                             });
+  //
+  //                             ScaffoldMessenger.of(context).showSnackBar(
+  //                               const SnackBar(
+  //                                 content: Text(
+  //                                   "Expense request submitted successfully ✅",
+  //                                 ),
+  //                                 backgroundColor: Colors.green,
+  //                               ),
+  //                             );
+  //
+  //                             Navigator.pop(context);
+  //                           } else {
+  //                             ScaffoldMessenger.of(context).showSnackBar(
+  //                               const SnackBar(
+  //                                 content: Text(
+  //                                   "Failed to submit expense request ❌",
+  //                                 ),
+  //                                 backgroundColor: Colors.red,
+  //                               ),
+  //                             );
+  //                           }
+  //                         },
+  //                   child: expenseController.isLoading.value
+  //                       ? const SizedBox(
+  //                           width: 20,
+  //                           height: 20,
+  //                           child: CircularProgressIndicator(
+  //                             strokeWidth: 2,
+  //                             color: Colors.white,
+  //                           ),
+  //                         )
+  //                       : const Text("Submit"),
+  //                 );
+  //               }),
+  //             ],
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
   void showRequestDialog() {
     final TextEditingController amountController = TextEditingController();
     final TextEditingController purposeController = TextEditingController();
+    final _formKey = GlobalKey<FormState>(); // ✅ Added form key
 
     showDialog(
       context: context,
@@ -62,46 +231,68 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                 ),
               ),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(
-                          Icons.currency_rupee,
-                          color: Colors.green,
+                child: Form(
+                  key: _formKey, // ✅ Added form
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.currency_rupee,
+                            color: Colors.green,
+                          ),
+                          labelText: "Requested Amount",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
-                        labelText: "Requested Amount",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "Please enter the amount";
+                          }
+                          final amount = double.tryParse(value);
+                          if (amount == null || amount <= 0) {
+                            return "Enter a valid positive number";
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: purposeController,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(
-                          Icons.assignment,
-                          color: Colors.green,
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: purposeController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.assignment,
+                            color: Colors.green,
+                          ),
+                          labelText: "Purpose / Reason",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
-                        labelText: "Purpose / Reason",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "Please enter a purpose or reason";
+                          }
+                          if (value.trim().length < 3) {
+                            return "Purpose must be at least 3 characters";
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -127,35 +318,16 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                     onPressed: expenseController.isLoading.value
                         ? null
                         : () async {
-                            /// Validate input
-                            if (amountController.text.isEmpty ||
-                                purposeController.text.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please fill all fields!"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                            // ✅ Validate all form fields first
+                            if (!_formKey.currentState!.validate()) {
                               return;
                             }
 
-                            final amount = double.tryParse(
-                              amountController.text,
-                            );
-                            if (amount == null || amount <= 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Enter a valid amount!"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
+                            final amount = double.parse(amountController.text);
 
-                            /// API call to request expense
                             await expenseController.createFundRequest(
                               amount: amount,
-                              reason: purposeController.text,
+                              reason: purposeController.text.trim(),
                             );
 
                             if (expenseController.fundRequest.value?.success ==
@@ -174,6 +346,8 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                     "Expense request submitted successfully ✅",
                                   ),
                                   backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.fixed, // ✅ bottom
+                                  duration: Duration(seconds: 2),
                                 ),
                               );
 
@@ -185,6 +359,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                     "Failed to submit expense request ❌",
                                   ),
                                   backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.fixed, // ✅ bottom
                                 ),
                               );
                             }
@@ -392,10 +567,10 @@ class _ExpenseScreenState extends State<ExpenseScreen>
 
                                 // ✅ CHANGED: Logic for avatar color
                                 final isCash =
-                                    (record.typeOfSupplOrService ?? "")
-                                        .isEmpty;
-                                final avatarColor =
-                                    isCash ? Colors.green : Colors.blue;
+                                    (record.typeOfSupplOrService ?? "").isEmpty;
+                                final avatarColor = isCash
+                                    ? Colors.green
+                                    : Colors.blue;
 
                                 return InkWell(
                                   onTap: () {
@@ -462,10 +637,11 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                               const SizedBox(height: 2),
                                               Text(
                                                 record.paymentDate != null &&
-                                                        record.paymentDate!
+                                                        record
+                                                            .paymentDate!
                                                             .isNotEmpty
                                                     ? "• ${DateFormat('dd MMM yyyy').format(DateTime.parse(record.paymentDate!))}"
-                                                    : "",
+                                                    : "• Not Paid",
                                                 style: TextStyle(
                                                   color: Colors.grey.shade600,
                                                   fontSize: 12,
@@ -475,18 +651,9 @@ class _ExpenseScreenState extends State<ExpenseScreen>
                                           ),
                                         ),
                                         Icon(
-                                          (record.paymentsStatus
-                                                          ?.toLowerCase() ??
-                                                      "") ==
-                                                  "paid"
-                                              ? Icons.check_circle
-                                              : Icons.pending,
-                                          color: (record.paymentsStatus
-                                                          ?.toLowerCase() ??
-                                                      "") ==
-                                                  "paid"
-                                              ? Colors.green
-                                              : Colors.orange,
+                                          (record.paymentsStatus?.toLowerCase() ?? record.paymentStatus?.toLowerCase()) ==  "paid" ? Icons.check_circle : Icons.pending,
+                                          color: (record.paymentsStatus?.toLowerCase() ?? record.paymentStatus?.toLowerCase()) == "paid"? Colors.green : Colors.orange,
+
                                         ),
                                       ],
                                     ),
