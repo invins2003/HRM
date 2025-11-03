@@ -2,6 +2,7 @@
 // ... (Your FaceNetService code) ...
 import 'dart:typed_data';
 import 'dart:io';
+import 'dart:math'; // <-- IMPORT MATH
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
@@ -9,7 +10,12 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-// Your FaceNetService class (unchanged)
+// Import the controller and model
+import 'package:erp_admin/module/DashBoard/Controller/EmployeeListController.dart';
+import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
+
+
+// --- FaceNetService Class (Unchanged) ---
 class FaceNetService {
   Interpreter? _interpreter;
   Future<void> loadModel() async {
@@ -53,16 +59,20 @@ class FaceNetService {
 // [End of FaceNetService class]
 
 
-// --- CORRECTED STATE CLASS ---
+// --- MODIFIED STATE CLASS (HANDLES BOTH MODES) ---
 
 class FaceProcessingScreen extends StatefulWidget {
-  final int maxCaptures;
+  final int maxCaptures; // For registration (e.g., 3)
   final CameraDescription camera;
+  final List<Data>? allEmployees; // OPTIONAL: For attendance mode
+  final DashBoardEmployeeList? controller; // OPTIONAL: For attendance mode
 
   const FaceProcessingScreen({
     super.key,
     required this.camera,
-    this.maxCaptures = 1,
+    this.maxCaptures = 1, // Default to 1, registration will pass 3
+    this.allEmployees,
+    this.controller,
   });
 
   @override
@@ -79,44 +89,46 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   );
 
   final FaceNetService _facenet = FaceNetService();
+  
+  // List for registration captures
   final List<List<double>> _capturedEmbeddings = [];
 
   bool _loading = true;
-  String _message = "Show your face to capture"; // Updated initial message
+  String _message = "Initializing...";
 
   CameraDescription? _currentCamera;
   List<CameraDescription>? _availableCameras;
 
-  // Flags to control processing
   bool _isProcessingStream = false;
   bool _isCapturing = false;
+
+  // --- NEW: Mode flag ---
+  bool _isAttendanceMode = false;
 
   @override
   void initState() {
     super.initState();
+    _currentCamera = widget.camera;
+
+    // --- SET THE MODE ---
+    _isAttendanceMode = widget.allEmployees != null && widget.controller != null;
+
+    if (_isAttendanceMode) {
+      _message = "Show your face to capture"; // Attendance message
+    } else {
+      _message = "Show your face and tap capture (0/${widget.maxCaptures})"; // Registration message
+    }
+    
     _initialize();
   }
 
   Future<void> _initialize() async {
     setState(() => _loading = true);
     await _facenet.loadModel();
-
     _availableCameras = await availableCameras();
-    
-    // --- DEFAULT TO FRONT CAMERA ---
-    try {
-      // Find the front camera
-      _currentCamera = _availableCameras?.firstWhere(
-        (cam) => cam.lensDirection == CameraLensDirection.front,
-      );
-    } catch (e) {
-      // If front camera not found, fallback to widget.camera or first available
-      _currentCamera = widget.camera ?? _availableCameras?.first;
-    }
-    // ----------------------------------------
 
     if (_currentCamera == null) {
-      debugPrint("Error: No cameras available.");
+      debugPrint("Error: No camera provided.");
       setState(() => _loading = false);
       return;
     }
@@ -132,19 +144,18 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
 
     await _cameraController!.initialize();
 
-    // Start the image stream for live feedback
-    await _cameraController!.startImageStream(_onImageStream);
+    // --- CONDITIONAL STREAM ---
+    if (_isAttendanceMode) {
+      // Only start the stream in attendance mode
+      await _cameraController!.startImageStream(_onImageStream);
+    }
 
     setState(() => _loading = false);
   }
 
-  // Handle image stream for live detection feedback
+  // Handle image stream (ONLY RUNS IN ATTENDANCE MODE)
   Future<void> _onImageStream(CameraImage image) async {
     if (_isProcessingStream || _isCapturing) return;
-    if (_capturedEmbeddings.length >= widget.maxCaptures) {
-      await _cameraController?.stopImageStream();
-      return;
-    }
 
     _isProcessingStream = true;
 
@@ -157,22 +168,19 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
 
       final faces = await _faceDetector.processImage(inputImage);
 
-      // --- AUTOMATIC CAPTURE ENABLED ---
       if (faces.isNotEmpty && mounted && !_isCapturing) {
         // Face detected!
         setState(() {
-          _message = "✅ Face detected! Stand still...";
+          _message = "✅ Face detected! Verifying...";
         });
-        // Trigger the high-res capture
-        await _captureFace(); // This line is restored
+        // Trigger the high-res capture and matching
+        await _captureAndMatchFace();
       } else if (mounted && !_isCapturing) {
         // Update message to show "looking"
         setState(() {
           _message = "Show your face to capture";
         });
       }
-      // -------------------------------------------
-
     } catch (e) {
       debugPrint("Error in image stream processing: $e");
     } finally {
@@ -184,20 +192,16 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   InputImage? _createInputImageFromCameraImage(CameraImage image) {
     if (_cameraController == null) return null;
     
-    // Tell ML Kit the format is NV21
     final InputImageFormat format = Platform.isAndroid
         ? InputImageFormat.nv21
         : InputImageFormat.bgra8888;
 
-    // --- THIS IS THE FIX ---
-    // Check for the format we actually requested (nv21)
     if (image.format.group != (Platform.isAndroid 
-          ? ImageFormatGroup.nv21 // <--- MUST MATCH WHAT WE REQUESTED
+          ? ImageFormatGroup.nv21 
           : ImageFormatGroup.bgra8888)) {
       debugPrint("Unexpected image format ${image.format.group}");
       return null;
     }
-    // -----------------------
 
     final allBytes = WriteBuffer();
     for (final Plane plane in image.planes) {
@@ -210,7 +214,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     final metadata = InputImageMetadata(
       size: Size(image.width.toDouble(), image.height.toDouble()),
       rotation: rotation,
-      format: format, // Use InputImageFormat.nv21
+      format: format, 
       bytesPerRow: image.planes[0].bytesPerRow,
     );
 
@@ -236,14 +240,12 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   Future<void> _switchCamera() async {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
 
-    // Stop stream before disposing
-    await _cameraController?.stopImageStream();
+    if (_isAttendanceMode) await _cameraController?.stopImageStream();
     await _cameraController?.dispose();
 
-    // Find the *other* camera
     _currentCamera = _availableCameras!.firstWhere(
       (cam) => cam.lensDirection != _currentCamera!.lensDirection,
-      orElse: () => _availableCameras!.first, // fallback
+      orElse: () => _availableCameras!.first,
     );
 
     _cameraController = CameraController(
@@ -251,21 +253,109 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21 // Also apply here
+          ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
-
-    // Restart the stream
-    await _cameraController!.startImageStream(_onImageStream);
-
+    
+    // --- CONDITIONAL STREAM RESTART ---
+    if (_isAttendanceMode) {
+      await _cameraController!.startImageStream(_onImageStream);
+    }
     setState(() {});
   }
 
-  // This function is now called automatically OR by the button
-  Future<void> _captureFace() async {
-    if (_capturedEmbeddings.length >= widget.maxCaptures) return;
+  // --- Logic for ATTENDANCE MODE (Continuous) ---
+  Future<void> _captureAndMatchFace() async {
+    if (_isCapturing) return; 
+    if (_cameraController == null) return;
+
+    setState(() => _isCapturing = true); // Lock capturing
+
+    try {
+      final cameraImage = await _cameraController!.takePicture();
+      final file = File(cameraImage.path);
+      final imageBytes = await file.readAsBytes();
+
+      final inputImage = InputImage.fromFilePath(cameraImage.path);
+      final faces = await _faceDetector.processImage(inputImage);
+
+      if (faces.isNotEmpty) {
+        final face = faces.first;
+        final decodedImage = img.decodeImage(imageBytes)!;
+        final rect = face.boundingBox;
+        final faceCrop = img.copyCrop(
+          decodedImage,
+          x: rect.left.toInt().clamp(0, decodedImage.width - 1),
+          y: rect.top.toInt().clamp(0, decodedImage.height - 1),
+          width: rect.width.toInt().clamp(1, decodedImage.width),
+          height: rect.height.toInt().clamp(1, decodedImage.height),
+        );
+
+        final embedding = _facenet.getEmbedding(faceCrop);
+        
+        if (embedding != null) {
+          Data? matchedEmployee;
+          double bestScore = 0;
+
+          for (final emp in widget.allEmployees!) {
+            final storedEmbeddings = emp.biometricEmpId!
+                .map<List<double>>(
+                    (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+                .toList();
+
+            for (var s in storedEmbeddings) {
+              final sim = _cosineSimilarity(embedding, s);
+              if (sim > bestScore) {
+                bestScore = sim;
+                matchedEmployee = emp;
+              }
+            }
+          }
+
+          if (matchedEmployee != null && bestScore >= 0.6) {
+            setState(() {
+              _message = "✅ ${matchedEmployee!.name} Verified!";
+            });
+            
+            // Run verification in the background
+            widget.controller!.verifyAttendance(
+              embedding,
+              matchedEmployee.employeeId.toString(),
+            );
+            
+            await Future.delayed(const Duration(seconds: 2)); 
+
+          } else {
+            setState(() {
+              _message = "⚠️ No Match Found. Try again.";
+            });
+            await Future.delayed(const Duration(seconds: 2));
+          }
+        }
+      } else {
+        setState(() {
+          _message = "⚠️ No face detected. Try again!";
+        });
+         await Future.delayed(const Duration(milliseconds: 500));
+      }
+    } catch (e) {
+      debugPrint("Error capturing face: $e");
+      setState(() { _message = "Error capturing face."; });
+      await Future.delayed(const Duration(seconds: 1));
+    } finally {
+      if(mounted) {
+         setState(() {
+           _message = "Show your face to capture";
+           _isCapturing = false; // Allow _onImageStream to trigger again
+         });
+      }
+    }
+  }
+
+  // --- Logic for REGISTRATION MODE (Manual Capture) ---
+  Future<void> _captureForRegistration() async {
     if (_isCapturing) return; // Prevent concurrent captures
     if (_cameraController == null) return;
 
@@ -281,12 +371,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
 
       if (faces.isNotEmpty) {
         final face = faces.first;
-
-        setState(() {
-          _message =
-              "✅ Captured face (${_capturedEmbeddings.length + 1}/${widget.maxCaptures})";
-        });
-
         final decodedImage = img.decodeImage(imageBytes)!;
         final rect = face.boundingBox;
         final faceCrop = img.copyCrop(
@@ -300,12 +384,24 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         final embedding = _facenet.getEmbedding(faceCrop);
         if (embedding != null) {
           _capturedEmbeddings.add(embedding);
-          if (_capturedEmbeddings.length >= widget.maxCaptures) {
-            // Stop stream when done
-            await _cameraController?.stopImageStream();
-            if(mounted) {
-              Navigator.pop(context, _capturedEmbeddings);
-            }
+          
+          final remaining = widget.maxCaptures - _capturedEmbeddings.length;
+          
+          if (remaining > 0) {
+              setState(() {
+                _message = "✅ Captured face (${_capturedEmbeddings.length}/${widget.maxCaptures})";
+              });
+          } else {
+              setState(() {
+                _message = "✅ All ${widget.maxCaptures} faces captured!";
+              });
+              
+              // Wait for a second so user can see the message
+              await Future.delayed(const Duration(seconds: 1));
+
+              if(mounted) {
+                Navigator.pop(context, _capturedEmbeddings);
+              }
           }
         }
       } else {
@@ -315,18 +411,28 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       }
     } catch (e) {
       debugPrint("Error capturing face: $e");
+      setState(() => _message = "Error. Try again.");
     } finally {
       if(mounted) {
-         // Add a small delay before allowing another auto-capture
-         await Future.delayed(const Duration(milliseconds: 500));
-         setState(() => _isCapturing = false); // Clear flag
+          setState(() => _isCapturing = false); // Clear flag
       }
     }
   }
 
+  // --- Cosine Similarity (Used by attendance mode) ---
+  double _cosineSimilarity(List<double> a, List<double> b) {
+    assert(a.length == b.length);
+    double dot = 0.0, normA = 0.0, normB = 0.0;
+    for (int i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    return dot / (sqrt(normA) * sqrt(normB));
+  }
+
   @override
   void dispose() {
-    // Stop stream before disposing controller
     _cameraController?.stopImageStream();
     _cameraController?.dispose();
     _faceDetector.close();
@@ -387,17 +493,33 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
               child: const Icon(Icons.cameraswitch, color: Colors.white),
             ),
           ),
+          
+          // Back Button
+          Positioned(
+            top: 40,
+            left: 20,
+            child: FloatingActionButton(
+              heroTag: "backButton",
+              onPressed: () => Navigator.pop(context),
+              backgroundColor: Colors.black.withOpacity(0.5),
+              mini: true,
+              child: const Icon(Icons.arrow_back, color: Colors.white),
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _captureFace, // Button still works for manual capture
-        label: const Text(
-          "Capture Face",
-          style: TextStyle(color: Colors.white),
-        ),
-        icon: const Icon(Icons.camera_alt, color: Colors.white),
-        backgroundColor: Colors.green,
-      ),
+      // --- CONDITIONAL FLOATING ACTION BUTTON ---
+      floatingActionButton: _isAttendanceMode 
+        ? null // No FAB in continuous attendance mode
+        : FloatingActionButton.extended(
+            onPressed: _captureForRegistration, // Call registration logic
+            label: const Text(
+              "Capture Face",
+              style: TextStyle(color: Colors.white),
+            ),
+            icon: const Icon(Icons.camera_alt, color: Colors.white),
+            backgroundColor: Colors.green,
+          ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

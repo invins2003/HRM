@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:camera/camera.dart';
-import 'package:erp_admin/common/faceattendence.dart';
+import 'package:erp_admin/common/faceattendence.dart'; // Make sure this path is correct for FaceProcessingScreen
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
 import 'package:erp_admin/module/RegisterEmployee/screens/RegisterEmployee.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../Controller/EmployeeListController.dart';
 import '../EmployeeListWidget.dart';
+
+// Import your FaceProcessingScreen
+// import 'package:erp_admin/path/to/FaceProcessingScreen.dart';
 
 class Dashboardscreen extends StatefulWidget {
   const Dashboardscreen({super.key});
@@ -22,7 +25,8 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   );
 
   DateTime selectedDate = DateTime.now();
-  bool _isProcessing = false; // ✅ loader flag
+  // ✅ _isProcessing flag is NO LONGER NEEDED here.
+  // The FaceProcessingScreen will handle its own UI state.
 
   @override
   void initState() {
@@ -35,48 +39,26 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: Colors.white,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showEmployeeSearchDialog(context),
-            backgroundColor: Colors.green,
-            child: const Icon(Icons.add),
+    // The Stack is no longer needed unless you add the loader back for other reasons
+    return Scaffold(
+      backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showEmployeeSearchDialog(context),
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(children: [_buildActionTile("Check-in")]),
           ),
-          body: Column(
-            children: [
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(children: [_buildActionTile("Check-in")]),
-              ),
-              const SizedBox(height: 10),
-              _buildDatePicker(context),
-              Expanded(child: _buildEmployeeList(context)),
-            ],
-          ),
-        ),
-
-        // ✅ Loader overlay
-        if (_isProcessing)
-          Container(
-            color: Colors.black.withOpacity(0.6),
-            child: const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: Colors.white),
-                  SizedBox(height: 16),
-                  Text(
-                    "Processing face match...",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
+          const SizedBox(height: 10),
+          _buildDatePicker(context),
+          Expanded(child: _buildEmployeeList(context)),
+        ],
+      ),
     );
   }
 
@@ -242,11 +224,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   void _showEmployeeSearchDialog(BuildContext context) {
     final searchController = TextEditingController();
     List<Data> filteredList = controller.employeelisttt
-    .where((emp) =>
-        emp.isActive == true &&
-        (emp.biometricEmpId == null ||
-         emp.biometricEmpId!.isEmpty))
-    .toList();
+        .where((emp) =>
+            emp.isActive == true &&
+            (emp.biometricEmpId == null || emp.biometricEmpId!.isEmpty))
+        .toList();
 
     showDialog(
       context: context,
@@ -341,23 +322,17 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     );
   }
 
-  // --- Automatic Face Matching ---
+  // --- Automatic Face Matching (MODIFIED) ---
   Future<void> _handleAutoAttendance(BuildContext context) async {
     try {
       final cameras = await availableCameras();
-      final firstCamera = cameras.first;
-
-      final liveEmbeddings = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => FaceProcessingScreen(camera: firstCamera),
-        ),
+      // Default to front camera
+      final firstCamera = cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
       );
 
-      if (liveEmbeddings == null || liveEmbeddings.isEmpty) return;
-
-      setState(() => _isProcessing = true);
-
+      // Get the list of registered employees BEFORE opening the camera
       final List<Data> allEmployees = controller.employeelisttt
           .where((e) =>
               e.isActive == true &&
@@ -365,68 +340,46 @@ class _DashboardscreenState extends State<Dashboardscreen> {
               e.biometricEmpId!.isNotEmpty)
           .toList();
 
-      Data? matchedEmployee;
-      double bestScore = 0;
-
-      for (final emp in allEmployees) {
-        final storedEmbeddings = emp.biometricEmpId!
-            .map<List<double>>(
-                (e) => (e as List).map<double>((v) => v.toDouble()).toList())
-            .toList();
-
-        for (var s in storedEmbeddings) {
-          final sim = _cosineSimilarity(liveEmbeddings.first, s);
-          if (sim > bestScore) {
-            bestScore = sim;
-            matchedEmployee = emp;
-          }
-        }
-      }
-
-      if (matchedEmployee != null && bestScore >= 0.6) {
+      if (allEmployees.isEmpty) {
         Get.snackbar(
-          "Face Matched",
-          "${matchedEmployee.name} verified ✅",
-          backgroundColor: Colors.green,
+          "No Registered Employees",
+          "Please register an employee's face first.",
+          backgroundColor: Colors.orangeAccent,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
-
-        await controller.verifyAttendance(
-          liveEmbeddings.first,
-          matchedEmployee.employeeId.toString(),
-        );
-        await controller.presentListtController(selectedDate);
-      } else {
-        Get.snackbar(
-          "No Match Found",
-          "Face did not match any registered employee ❌",
-          backgroundColor: Colors.redAccent,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        return;
       }
+
+      // Navigate to the continuous scanning screen.
+      // Pass the camera, the employee list, and the controller.
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FaceProcessingScreen(
+            camera: firstCamera,
+            allEmployees: allEmployees,
+            controller: controller,
+          ),
+        ),
+      );
+
+      // After the camera screen is closed (e.g., user presses back),
+      // refresh the present list.
+      await controller.presentListtController(selectedDate);
+      
     } catch (e, st) {
       debugPrint("Error in auto check-in: $e\n$st");
       Get.snackbar(
         "Error",
-        "Something went wrong during face verification.",
+        "Could not open camera. Check permissions.",
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
-    } finally {
-      setState(() => _isProcessing = false);
     }
+    // NO 'finally' block or _isProcessing logic needed here anymore.
   }
 
-  double _cosineSimilarity(List<double> a, List<double> b) {
-    assert(a.length == b.length);
-    double dot = 0.0, normA = 0.0, normB = 0.0;
-    for (int i = 0; i < a.length; i++) {
-      dot += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-    return dot / (sqrt(normA) * sqrt(normB));
-  }
+  // _cosineSimilarity is no longer needed here.
+  // It will be moved to FaceProcessingScreen.
 }
