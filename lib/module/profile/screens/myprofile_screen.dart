@@ -27,79 +27,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.green),
-          );
-        }
-
-        final profile = controller.profile.value;
-        if (profile == null) {
-          return const Center(child: Text("Could not load profile data."));
-        }
-
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(context, profile),
-              const SizedBox(height: 10),
-              _buildUserInfo(profile),
-
-              /// Account Info
-              _buildInfoCard(
-                title: "Account Information",
-                children: [
-                  _buildInfoTile(Icons.shield_outlined, "Role", profile.type),
-                  _buildInfoTile(
-                    Icons.toggle_on_outlined,
-                    "Status",
-                    profile.isActive == 1 ? "Active" : "Inactive",
-                  ),
-                  Obx(
-                    () => _buildInfoTile(
-                      Icons.person_add_alt_1_outlined,
-                      "Created By",
-                      controller.createdByName.value.isNotEmpty
-                          ? controller.createdByName.value
-                          : "-",
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.green),
+            );
+          }
+        
+          final profile = controller.profile.value;
+          if (profile == null) {
+            return const Center(child: Text("Could not load profile data."));
+          }
+        
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(context, profile),
+                const SizedBox(height: 10),
+                _buildUserInfo(profile),
+        
+                /// Account Info
+                _buildInfoCard(
+                  title: "Account Information",
+                  children: [
+                    _buildInfoTile(Icons.shield_outlined, "Role", profile.type),
+                    _buildInfoTile(
+                      Icons.toggle_on_outlined,
+                      "Status",
+                      profile.isActive == 1 ? "Active" : "Inactive",
                     ),
-                  ),
-                ],
-              ),
-
-              _branchCard(),
-
-              /// Preferences
-              _buildInfoCard(
-                title: "Preferences",
-                children: [
-                  _buildInfoTile(
-                    Icons.display_settings_outlined,
-                    "Mode",
-                    profile.mode,
-                  ),
-                  _buildInfoTile(
-                    Icons.dark_mode_outlined,
-                    "Dark Mode",
-                    profile.darkMode == true ? "Enabled" : "Disabled",
-                  ),
-                  _buildInfoTile(
-                    Icons.color_lens_outlined,
-                    "Messenger Color",
-                    profile.messengerColor,
-                  ),
-                ],
-              ),
-
-              /// ✅ Branch Card (Now handles 1 vs. 1+ branches)
-              const SizedBox(height: 20),
-              // _buildLogoutButton(),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      }),
+                    Obx(
+                      () => _buildInfoTile(
+                        Icons.person_add_alt_1_outlined,
+                        "Created By",
+                        controller.createdByName.value.isNotEmpty
+                            ? controller.createdByName.value
+                            : "-",
+                      ),
+                    ),
+                  ],
+                ),
+        
+                _branchCard(),
+        
+                /// Preferences
+                _buildInfoCard(
+                  title: "Preferences",
+                  children: [
+                    _buildInfoTile(
+                      Icons.display_settings_outlined,
+                      "Mode",
+                      profile.mode,
+                    ),
+                    _buildInfoTile(
+                      Icons.dark_mode_outlined,
+                      "Dark Mode",
+                      profile.darkMode == true ? "Enabled" : "Disabled",
+                    ),
+                    _buildInfoTile(
+                      Icons.color_lens_outlined,
+                      "Messenger Color",
+                      profile.messengerColor,
+                    ),
+                  ],
+                ),
+        
+                /// ✅ Branch Card (Now handles 1 vs. 1+ branches)
+                const SizedBox(height: 20),
+                // _buildLogoutButton(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 

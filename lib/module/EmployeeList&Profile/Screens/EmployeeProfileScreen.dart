@@ -63,220 +63,222 @@ class EmployeeProfileScreen extends StatelessWidget {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Obx(() {
-        if (controller.isloading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final profile = controller.Profiledata.value.data;
-
-        if (profile == null) {
-          return const Center(
-            child: Text(
-              "No Profile Data Found",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isloading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+        
+          final profile = controller.Profiledata.value.data;
+        
+          if (profile == null) {
+            return const Center(
+              child: Text(
+                "No Profile Data Found",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            );
+          }
+        
+          // Use DefaultTabController to manage the tab state
+          return DefaultTabController(
+            length: 4, // Four tabs: Personal, Company, Bank, System
+            child: Column(
+              children: [
+                // 👤 Profile Header
+                _buildProfileHeader(profile),
+        
+                // 📑 Tab Bar
+                Container(
+                  color: Colors.white, // Background for the tab bar
+                  child: TabBar(
+                    // isScrollable: true,
+                    textScaler: TextScaler.linear(0.9),
+                    labelColor: Colors.green.shade700,
+                    unselectedLabelColor: Colors.grey.shade600,
+                    indicatorColor: Colors.green.shade700,
+                    indicatorWeight: 3,
+                    tabs: const [
+                      Tab(icon: Icon(Icons.person_outline), text: "Personal"),
+                      Tab(
+                        icon: Icon(Icons.business_center_outlined),
+                        text: "Company",
+                      ),
+                      Tab(
+                        icon: Icon(Icons.account_balance_outlined),
+                        text: "Bank",
+                      ),
+                      Tab(icon: Icon(Icons.settings_outlined), text: "System"),
+                    ],
+                  ),
+                ),
+        
+                // 📄 Tab Bar View
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // 1. Personal Info Page
+                      _buildInfoPage(
+                        children: [
+                          _infoCard(
+                            icon: Icons.badge,
+                            title: "Employee ID",
+                            value: profile.employeeId == null
+                                ? "--"
+                                : "EMP${profile.employeeId.toString().padLeft(5, '0')}",
+                          ),
+                          // <-- UPDATED HERE
+                          _infoCard(
+                            icon: Icons.numbers_sharp,
+                            title: "Employee Type",
+                            value: profile.employeeType ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.calendar_today,
+                            title: "Date of Birth",
+                            value: _formatDateOnly(profile.dob),
+                          ),
+                          _infoCard(
+                            icon: Icons.person_2_rounded,
+                            title: "Father's Name",
+                            value: profile.fatherName ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.person,
+                            title: "Gender",
+                            value: profile.gender ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.phone,
+                            title: "Phone",
+                            value: profile.phone ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.email,
+                            title: "Email",
+                            value: profile.email ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.home,
+                            title: "Address",
+                            value: profile.address ?? "--",
+                            isMultiLine: true,
+                          ),
+                          _infoCard(
+                            icon: Icons.numbers,
+                            title: "UAN Number",
+                            value: profile.uanNumber ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.numbers_sharp,
+                            title: "IP Number",
+                            value: profile.ipNumber ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.perm_identity_rounded,
+                            title: "Aadhaar Number",
+                            value: profile.aadhaarNumber ?? "--",
+                          ),
+                        ],
+                      ),
+        
+                      // 2. Company Info Page
+                      _buildInfoPage(
+                        children: [
+                          _infoCard(
+                            icon: Icons.apartment,
+                            title: "Site",
+                            value: profile.branch?.name ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.account_tree,
+                            title: "Department",
+                            value: profile.department?.name ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.work,
+                            title: "Designation",
+                            value: profile.designation?.name ?? "--",
+                          ),
+                          // <-- UPDATED HERE
+                          _infoCard(
+                            icon: Icons.calendar_month,
+                            title: "Date of Joining",
+                            value: _formatDateOnly(profile.companyDoj),
+                          ),
+                          _infoCard(
+                            icon: Icons.monetization_on,
+                            title: "Salary Type",
+                            value: profile.salaryType ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.payments,
+                            title: "Salary",
+                            value: profile.salary ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.directions_walk_outlined,
+                            title: "Rejoin Reason",
+                            value: profile.rejoinReason ?? "--",
+                            isMultiLine: true,
+                          ),
+                        ],
+                      ),
+        
+                      // 3. Bank Details Page
+                      _buildInfoPage(
+                        children: [
+                          _infoCard(
+                            icon: Icons.person_outline,
+                            title: "Account Holder",
+                            value: profile.accountHolderName ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.credit_card,
+                            title: "Account Number",
+                            value: profile.accountNumber ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.account_balance,
+                            title: "Bank Name",
+                            value: profile.bankName ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.qr_code,
+                            title: "Bank Identifier Code",
+                            value: profile.bankIdentifierCode ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.location_on,
+                            title: "Branch Location",
+                            value: profile.branchLocation ?? "--",
+                          ),
+                          _infoCard(
+                            icon: Icons.numbers,
+                            title: "Tax Payer ID",
+                            value: profile.taxPayerId ?? "--",
+                          ),
+                        ],
+                      ),
+        
+                      // 4. System Info Page
+                      _buildInfoPage(
+                        children: [
+                          _infoCard(
+                            icon: Icons.lock_outline,
+                            title: "Account Active",
+                            value: profile.isActive == true ? "Yes" : "No",
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
-        }
-
-        // Use DefaultTabController to manage the tab state
-        return DefaultTabController(
-          length: 4, // Four tabs: Personal, Company, Bank, System
-          child: Column(
-            children: [
-              // 👤 Profile Header
-              _buildProfileHeader(profile),
-
-              // 📑 Tab Bar
-              Container(
-                color: Colors.white, // Background for the tab bar
-                child: TabBar(
-                  // isScrollable: true,
-                  textScaler: TextScaler.linear(0.9),
-                  labelColor: Colors.green.shade700,
-                  unselectedLabelColor: Colors.grey.shade600,
-                  indicatorColor: Colors.green.shade700,
-                  indicatorWeight: 3,
-                  tabs: const [
-                    Tab(icon: Icon(Icons.person_outline), text: "Personal"),
-                    Tab(
-                      icon: Icon(Icons.business_center_outlined),
-                      text: "Company",
-                    ),
-                    Tab(
-                      icon: Icon(Icons.account_balance_outlined),
-                      text: "Bank",
-                    ),
-                    Tab(icon: Icon(Icons.settings_outlined), text: "System"),
-                  ],
-                ),
-              ),
-
-              // 📄 Tab Bar View
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    // 1. Personal Info Page
-                    _buildInfoPage(
-                      children: [
-                        _infoCard(
-                          icon: Icons.badge,
-                          title: "Employee ID",
-                          value: profile.employeeId == null
-                              ? "--"
-                              : "EMP${profile.employeeId.toString().padLeft(5, '0')}",
-                        ),
-                        // <-- UPDATED HERE
-                        _infoCard(
-                          icon: Icons.numbers_sharp,
-                          title: "Employee Type",
-                          value: profile.employeeType ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.calendar_today,
-                          title: "Date of Birth",
-                          value: _formatDateOnly(profile.dob),
-                        ),
-                        _infoCard(
-                          icon: Icons.person_2_rounded,
-                          title: "Father's Name",
-                          value: profile.fatherName ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.person,
-                          title: "Gender",
-                          value: profile.gender ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.phone,
-                          title: "Phone",
-                          value: profile.phone ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.email,
-                          title: "Email",
-                          value: profile.email ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.home,
-                          title: "Address",
-                          value: profile.address ?? "--",
-                          isMultiLine: true,
-                        ),
-                        _infoCard(
-                          icon: Icons.numbers,
-                          title: "UAN Number",
-                          value: profile.uanNumber ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.numbers_sharp,
-                          title: "IP Number",
-                          value: profile.ipNumber ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.perm_identity_rounded,
-                          title: "Aadhaar Number",
-                          value: profile.aadhaarNumber ?? "--",
-                        ),
-                      ],
-                    ),
-
-                    // 2. Company Info Page
-                    _buildInfoPage(
-                      children: [
-                        _infoCard(
-                          icon: Icons.apartment,
-                          title: "Site",
-                          value: profile.branch?.name ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.account_tree,
-                          title: "Department",
-                          value: profile.department?.name ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.work,
-                          title: "Designation",
-                          value: profile.designation?.name ?? "--",
-                        ),
-                        // <-- UPDATED HERE
-                        _infoCard(
-                          icon: Icons.calendar_month,
-                          title: "Date of Joining",
-                          value: _formatDateOnly(profile.companyDoj),
-                        ),
-                        _infoCard(
-                          icon: Icons.monetization_on,
-                          title: "Salary Type",
-                          value: profile.salaryType ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.payments,
-                          title: "Salary",
-                          value: profile.salary ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.directions_walk_outlined,
-                          title: "Rejoin Reason",
-                          value: profile.rejoinReason ?? "--",
-                          isMultiLine: true,
-                        ),
-                      ],
-                    ),
-
-                    // 3. Bank Details Page
-                    _buildInfoPage(
-                      children: [
-                        _infoCard(
-                          icon: Icons.person_outline,
-                          title: "Account Holder",
-                          value: profile.accountHolderName ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.credit_card,
-                          title: "Account Number",
-                          value: profile.accountNumber ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.account_balance,
-                          title: "Bank Name",
-                          value: profile.bankName ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.qr_code,
-                          title: "Bank Identifier Code",
-                          value: profile.bankIdentifierCode ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.location_on,
-                          title: "Branch Location",
-                          value: profile.branchLocation ?? "--",
-                        ),
-                        _infoCard(
-                          icon: Icons.numbers,
-                          title: "Tax Payer ID",
-                          value: profile.taxPayerId ?? "--",
-                        ),
-                      ],
-                    ),
-
-                    // 4. System Info Page
-                    _buildInfoPage(
-                      children: [
-                        _infoCard(
-                          icon: Icons.lock_outline,
-                          title: "Account Active",
-                          value: profile.isActive == true ? "Yes" : "No",
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
+        }),
+      ),
     );
   }
 

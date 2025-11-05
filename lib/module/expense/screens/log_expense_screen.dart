@@ -524,369 +524,371 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
         elevation: 0,
         foregroundColor: Colors.white,
       ),
-      body: Obx(() {
-        if (expenseController.isFetchingCategories.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final categories = expenseController.categoryList;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DropdownButtonFormField<String>(
-                value: _purchaseType,
-                items: const [
-                  DropdownMenuItem(value: "cash", child: Text("Cash Purchase")),
-                  DropdownMenuItem(
-                    value: "credit",
-                    child: Text("Credit Purchase"),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _purchaseType = value!;
-                  });
-                },
-                decoration: _buildInputDecoration(
-                  labelText: "Purchase Type",
-                  icon: Icons.storefront,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              if (_purchaseType == "credit") ...[
-                TextField(
-                  controller: _vendorNameController,
-                  decoration: _buildInputDecoration(
-                    labelText: "Vendor Name",
-                    icon: Icons.person_outline,
-                  ),
-                ),
-                const SizedBox(height: 16),
+      body: SafeArea(
+        child: Obx(() {
+          if (expenseController.isFetchingCategories.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+        
+          final categories = expenseController.categoryList;
+        
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 DropdownButtonFormField<String>(
-                  value: _creditPurchaseType,
-                  hint: const Text("Select Purchase Type"),
+                  value: _purchaseType,
                   items: const [
-                    DropdownMenuItem(value: "service", child: Text("Service")),
-                    DropdownMenuItem(value: "supply", child: Text("Supply")),
+                    DropdownMenuItem(value: "cash", child: Text("Cash Purchase")),
+                    DropdownMenuItem(
+                      value: "credit",
+                      child: Text("Credit Purchase"),
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _creditPurchaseType = value;
+                      _purchaseType = value!;
                     });
                   },
                   decoration: _buildInputDecoration(
-                    labelText: "Type of Purchase",
-                    icon: Icons.work_outline,
+                    labelText: "Purchase Type",
+                    icon: Icons.storefront,
                   ),
                 ),
                 const SizedBox(height: 16),
-              ],
-
-              TextField(
-                controller: descriptionController,
-                decoration: _buildInputDecoration(
-                  labelText: "Description / Reason",
-                  icon: Icons.description,
+        
+                if (_purchaseType == "credit") ...[
+                  TextField(
+                    controller: _vendorNameController,
+                    decoration: _buildInputDecoration(
+                      labelText: "Vendor Name",
+                      icon: Icons.person_outline,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _creditPurchaseType,
+                    hint: const Text("Select Purchase Type"),
+                    items: const [
+                      DropdownMenuItem(value: "service", child: Text("Service")),
+                      DropdownMenuItem(value: "supply", child: Text("Supply")),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _creditPurchaseType = value;
+                      });
+                    },
+                    decoration: _buildInputDecoration(
+                      labelText: "Type of Purchase",
+                      icon: Icons.work_outline,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+        
+                TextField(
+                  controller: descriptionController,
+                  decoration: _buildInputDecoration(
+                    labelText: "Description / Reason",
+                    icon: Icons.description,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<int>(
-                value: selectedCategoryId,
-                items: categories
-                    .map(
-                      (cat) => DropdownMenuItem<int>(
-                        value: cat.id,
-                        child: Text(cat.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCategoryId = value!;
-                  });
-                },
-                decoration: _buildInputDecoration(
-                  labelText: "Select Category",
-                  icon: Icons.category,
+                const SizedBox(height: 16),
+        
+                DropdownButtonFormField<int>(
+                  value: selectedCategoryId,
+                  items: categories
+                      .map(
+                        (cat) => DropdownMenuItem<int>(
+                          value: cat.id,
+                          child: Text(cat.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategoryId = value!;
+                    });
+                  },
+                  decoration: _buildInputDecoration(
+                    labelText: "Select Category",
+                    icon: Icons.category,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // Item Card
-              Card(
-                elevation: 2,
-                shadowColor: Colors.green.withOpacity(0.2),
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Add New Item",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                const SizedBox(height: 24),
+        
+                // Item Card
+                Card(
+                  elevation: 2,
+                  shadowColor: Colors.green.withOpacity(0.2),
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Add New Item",
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: itemNameController,
-                        decoration: _buildInputDecoration(
-                          labelText: "Item Name",
-                          icon: Icons.shopping_bag_outlined,
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: itemNameController,
+                          decoration: _buildInputDecoration(
+                            labelText: "Item Name",
+                            icon: Icons.shopping_bag_outlined,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: subtotalController,
-                        keyboardType: TextInputType.number,
-                        decoration: _buildInputDecoration(
-                          labelText: "Subtotal",
-                          icon: Icons.currency_rupee,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        title: const Text("Is this item taxable?"),
-                        value: isTaxable,
-                        activeColor: Colors.green,
-                        onChanged: (val) => setState(() => isTaxable = val),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                      if (isTaxable) ...[
                         const SizedBox(height: 12),
                         TextField(
-                          controller: taxRateController,
+                          controller: subtotalController,
                           keyboardType: TextInputType.number,
                           decoration: _buildInputDecoration(
-                            labelText: "Tax Rate (%)",
-                            icon: Icons.percent,
+                            labelText: "Subtotal",
+                            icon: Icons.currency_rupee,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          value: taxType,
-                          items: const [
-                            DropdownMenuItem(
-                              value: "exclusive",
-                              child: Text("Exclusive Tax"),
-                            ),
-                            DropdownMenuItem(
-                              value: "inclusive",
-                              child: Text("Inclusive Tax"),
-                            ),
-                          ],
-                          onChanged: (val) => setState(() => taxType = val!),
-                          decoration: _buildInputDecoration(
-                            labelText: "Tax Type",
-                            icon: Icons.money,
-                          ),
+                        SwitchListTile(
+                          title: const Text("Is this item taxable?"),
+                          value: isTaxable,
+                          activeColor: Colors.green,
+                          onChanged: (val) => setState(() => isTaxable = val),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
                         ),
-                      ],
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Stack(
-                            children: [
-                              InkWell(
-                                onTap: () =>
-                                    _openSelectedFile(selectedDocument),
-                                borderRadius: BorderRadius.circular(8),
-                                child: _buildDocumentPreview(selectedDocument),
-                              ),
-                              if (selectedDocument != null)
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedDocument = null;
-                                      });
-                                    },
-                                    child: CircleAvatar(
-                                      radius: 10,
-                                      backgroundColor: Colors.red,
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 12,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                        if (isTaxable) ...[
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: taxRateController,
+                            keyboardType: TextInputType.number,
+                            decoration: _buildInputDecoration(
+                              labelText: "Tax Rate (%)",
+                              icon: Icons.percent,
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextButton.icon(
-                              onPressed: _openBottomSheet,
-                              icon: const Icon(Icons.attach_file),
-                              label: Text(
-                                selectedDocument == null
-                                    ? "Attach Document (Optional)"
-                                    : "Attached: ${selectedDocument!.path.split('/').last}",
-                                overflow: TextOverflow.ellipsis,
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: taxType,
+                            items: const [
+                              DropdownMenuItem(
+                                value: "exclusive",
+                                child: Text("Exclusive Tax"),
                               ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.green.shade800,
-                                backgroundColor: Colors.green.shade100,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
+                              DropdownMenuItem(
+                                value: "inclusive",
+                                child: Text("Inclusive Tax"),
                               ),
+                            ],
+                            onChanged: (val) => setState(() => taxType = val!),
+                            decoration: _buildInputDecoration(
+                              labelText: "Tax Type",
+                              icon: Icons.money,
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _addItem,
-                          icon: const Icon(Icons.add),
-                          label: const Text("Add Item"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Added items list
-              if (items.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Added Items",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Card(
-                          elevation: 8,
-                          shadowColor: Colors.green.withOpacity(0.2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: InkWell(
-                              onTap: () => _openSelectedFile(item.document),
-                              borderRadius: BorderRadius.circular(8),
-                              child: _buildDocumentPreview(item.document),
-                            ),
-                            title: Text(
-                              item.itemName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Stack(
                               children: [
-                                Text(
-                                  "Subtotal: ₹${item.subtotal.toStringAsFixed(2)}",
+                                InkWell(
+                                  onTap: () =>
+                                      _openSelectedFile(selectedDocument),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: _buildDocumentPreview(selectedDocument),
                                 ),
-                                if (item.isTaxable)
-                                  Text(
-                                    "Tax: ${item.taxRate}% (${item.taxType})",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade700,
+                                if (selectedDocument != null)
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedDocument = null;
+                                        });
+                                      },
+                                      child: CircleAvatar(
+                                        radius: 10,
+                                        backgroundColor: Colors.red,
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                               ],
                             ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Colors.red.shade700,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: _openBottomSheet,
+                                icon: const Icon(Icons.attach_file),
+                                label: Text(
+                                  selectedDocument == null
+                                      ? "Attach Document (Optional)"
+                                      : "Attached: ${selectedDocument!.path.split('/').last}",
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.green.shade800,
+                                  backgroundColor: Colors.green.shade100,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
                               ),
-                              onPressed: () => _deleteItem(index),
                             ),
-                            isThreeLine: item.isTaxable,
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _addItem,
+                            icon: const Icon(Icons.add),
+                            label: const Text("Add Item"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              const SizedBox(height: 24),
-
-              if (items.isNotEmpty)
-                Text(
-                  "Total: ₹${totalExpense.toStringAsFixed(2)}",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
                   ),
                 ),
-              const SizedBox(height: 24),
-
-              Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: expenseController.isLoading.value
-                        ? null
-                        : _submitExpense,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 24),
+        
+                // Added items list
+                if (items.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Added Items",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    child: expenseController.isLoading.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                      const SizedBox(height: 12),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return Card(
+                            elevation: 8,
+                            shadowColor: Colors.green.withOpacity(0.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          )
-                        : const Text("Save Expense"),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              leading: InkWell(
+                                onTap: () => _openSelectedFile(item.document),
+                                borderRadius: BorderRadius.circular(8),
+                                child: _buildDocumentPreview(item.document),
+                              ),
+                              title: Text(
+                                item.itemName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Subtotal: ₹${item.subtotal.toStringAsFixed(2)}",
+                                  ),
+                                  if (item.isTaxable)
+                                    Text(
+                                      "Tax: ${item.taxRate}% (${item.taxType})",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red.shade700,
+                                ),
+                                onPressed: () => _deleteItem(index),
+                              ),
+                              isThreeLine: item.isTaxable,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 24),
+        
+                if (items.isNotEmpty)
+                  Text(
+                    "Total: ₹${totalExpense.toStringAsFixed(2)}",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                const SizedBox(height: 24),
+        
+                Obx(
+                  () => SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: expenseController.isLoading.value
+                          ? null
+                          : _submitExpense,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: expenseController.isLoading.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text("Save Expense"),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }

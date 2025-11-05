@@ -45,19 +45,21 @@ class ExpenseDetailsScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeaderCard(),
-            const SizedBox(height: 24),
-            _buildDetailsCard(context, categoryName),
-            const SizedBox(height: 24),
-            if (expense.items != null && expense.items!.isNotEmpty)
-              _buildItemsCard(context),
-            const SizedBox(height: 24), // Added padding at the bottom
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeaderCard(),
+              const SizedBox(height: 24),
+              _buildDetailsCard(context, categoryName),
+              const SizedBox(height: 24),
+              if (expense.items != null && expense.items!.isNotEmpty)
+                _buildItemsCard(context),
+              const SizedBox(height: 24), // Added padding at the bottom
+            ],
+          ),
         ),
       ),
     );
