@@ -32,82 +32,29 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔹 MediaQuery for responsive UI
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
+    final padding = isTablet ? 20.0 : 10.0;
+    final fontSize = isTablet ? 20.0 : 16.0;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(children: [_buildActionTile("Check-in")]),
-            ),
-            const SizedBox(height: 10),
-            _buildDatePicker(context),
-            Expanded(child: _buildEmployeeList(context)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- Date Picker ----------------
-  Widget _buildDatePicker(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: InkWell(
-        onTap: () async {
-          final pickedDate = await showDatePicker(
-            context: context,
-            initialDate: selectedDate,
-            firstDate: DateTime(2020),
-            lastDate: DateTime.now(),
-            builder: (context, child) {
-              return Theme(
-                data: ThemeData.light().copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: Colors.green,
-                    onPrimary: Colors.white,
-                    onSurface: Colors.black,
-                  ),
-                ),
-                child: child!,
-              );
-            },
-          );
-
-          if (pickedDate != null && pickedDate != selectedDate) {
-            setState(() => selectedDate = pickedDate);
-            await controller.listtController();
-            await controller.presentListtController(pickedDate);
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.withOpacity(0.4)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
             children: [
+              SizedBox(height: isTablet ? 30 : 20),
               Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    DateFormat('EEEE, MMM d, yyyy').format(selectedDate),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  _buildActionTile("Check-in", fontSize, isTablet),
                 ],
               ),
-              const Icon(Icons.edit_calendar, color: Colors.green),
+              SizedBox(height: isTablet ? 30 : 20),
+              _buildDatePicker(context, fontSize, isTablet),
+              SizedBox(height: isTablet ? 40 : 30),
+              Expanded(child: _buildEmployeeList(context, isTablet)),
             ],
           ),
         ),
@@ -115,8 +62,73 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     );
   }
 
+  // ---------------- Date Picker ----------------
+  Widget _buildDatePicker(BuildContext context, double fontSize, bool isTablet) {
+    return InkWell(
+      onTap: () async {
+        final pickedDate = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: ThemeData.light().copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: Colors.green,
+                  onPrimary: Colors.white,
+                  onSurface: Colors.black,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (pickedDate != null && pickedDate != selectedDate) {
+          setState(() => selectedDate = pickedDate);
+          await controller.listtController();
+          await controller.presentListtController(pickedDate);
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 20 : 16,
+          vertical: isTablet ? 16 : 12,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+          border: Border.all(color: Colors.green.withOpacity(0.4)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calendar_today,
+                    color: Colors.green, size: isTablet ? 26 : 20),
+                SizedBox(width: isTablet ? 12 : 8),
+                Text(
+                  DateFormat('EEEE, MMM d, yyyy').format(selectedDate),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: fontSize,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            Icon(Icons.edit_calendar,
+                color: Colors.green, size: isTablet ? 26 : 22),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---------------- Employee List ----------------
-  Widget _buildEmployeeList(BuildContext context) {
+  Widget _buildEmployeeList(BuildContext context, bool isTablet) {
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -126,7 +138,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         return Center(
           child: Text(
             controller.errorMs.value,
-            style: const TextStyle(color: Colors.red),
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: isTablet ? 18 : 14,
+            ),
           ),
         );
       }
@@ -136,25 +151,36 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.people_outline, size: 60, color: Colors.grey),
-              const SizedBox(height: 10),
-              const Text("No attendance records found",
-                  style: TextStyle(fontSize: 16, color: Colors.black54)),
-              const SizedBox(height: 15),
+              Icon(Icons.people_outline,
+                  size: isTablet ? 100 : 60, color: Colors.grey),
+              SizedBox(height: isTablet ? 20 : 10),
+              Text(
+                "No attendance records found",
+                style: TextStyle(
+                  fontSize: isTablet ? 18 : 16,
+                  color: Colors.black54,
+                ),
+              ),
+              SizedBox(height: isTablet ? 25 : 15),
               ElevatedButton.icon(
                 onPressed: () async {
                   await controller.listtController();
                   await controller.presentListtController(selectedDate);
                 },
-                icon: const Icon(Icons.refresh, size: 20),
-                label: const Text("Retry"),
+                icon: Icon(Icons.refresh, size: isTablet ? 24 : 20),
+                label: Text(
+                  "Retry",
+                  style: TextStyle(fontSize: isTablet ? 18 : 14),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 24 : 16,
+                    vertical: isTablet ? 16 : 12,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
@@ -178,33 +204,37 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   }
 
   // ---------------- Check-in Button ----------------
-  Widget _buildActionTile(String label) {
+  Widget _buildActionTile(String label, double fontSize, bool isTablet) {
     return Expanded(
       child: GestureDetector(
         onTap: () {
           if (label == "Check-in") _handleAutoAttendance(context);
         },
         child: Container(
-          height: 80,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          height: isTablet ? 100 : 80,
+          margin: EdgeInsets.symmetric(
+            horizontal: isTablet ? 12 : 8,
+            vertical: isTablet ? 10 : 6,
+          ),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.verified, color: Colors.white, size: 28),
-              SizedBox(width: 10),
+              Icon(Icons.verified,
+                  color: Colors.white, size: isTablet ? 36 : 28),
+              SizedBox(width: isTablet ? 14 : 10),
               Text(
-                "Check-in",
+                label,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: isTablet ? 24 : 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),

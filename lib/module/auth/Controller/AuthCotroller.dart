@@ -1,12 +1,11 @@
 import 'dart:developer';
-
+import 'package:erp_admin/module/DashBoard/Screens/DashBoardScreen.dart';
 import 'package:erp_admin/module/auth/Model/loginModel.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Repo/AuthRepo.dart';
-import 'BiometricController.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authformRepo;
@@ -23,6 +22,11 @@ class AuthController extends GetxController {
       if (response.statusCode == 200) {
         final loginModel = LoginModel.fromJson(response.body);
 
+        // ✅ Save Token
+        await prefs.setString("USER_TOKEN", loginModel.token ?? "");
+        Constants.TOKEN = loginModel.token.toString();
+
+        // ✅ Success Snackbar
         Get.snackbar(
           "Success",
           "Login Successful",
@@ -30,24 +34,16 @@ class AuthController extends GetxController {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
-        await prefs.setString("USER_TOKEN", loginModel.token ?? "");
-        Constants.TOKEN = loginModel.token.toString();
-        bool? alreadySet = prefs.getBool("BIOMETRIC_ENABLED");
 
-        if (alreadySet == null) {
-          // First time login → ask biometric permission
-          final bioCtrl = Get.put(BiometricController());
-          bioCtrl.askBiometricPermission();
-        } else {
-          // If biometric choice already exists → main.dart will handle login flow
-          Get.offAllNamed("/main");
-        }
+        // ✅ Navigate directly to Dashboard
+        Get.offAll(() => const Dashboardscreen());
 
         return true;
       } else {
+        // ❌ Login failed
         Get.snackbar(
-          "Faild",
-          "Login failed ${response.statusCode}",
+          "Failed",
+          "Login failed (${response.statusCode})",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -56,28 +52,30 @@ class AuthController extends GetxController {
         return false;
       }
     } catch (e) {
+      // ⚠️ Exception Handling
       Get.snackbar(
-        "Wrong",
+        "Error",
         "Something went wrong: $e",
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.yellow,
+        backgroundColor: Colors.orangeAccent,
         colorText: Colors.white,
       );
-      print("Error --------->>>>>>>>>>>>>>> ${e}");
+      log("Error --------->>>>>>>>>>>>>>> $e");
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ✅ Fetch current user (kept same)
   var isLoading1 = true.obs;
   var hasExpensePermission = false.obs;
+
   Future<void> fetchCurrentUser() async {
     try {
       isLoading1.value = true;
       final user = await authformRepo.fetchCurrentUser();
 
-      // Check permission logic
       hasExpensePermission.value = user.permissions.any(
         (p) =>
             p == "manage expense" ||
@@ -86,9 +84,9 @@ class AuthController extends GetxController {
             p == "delete expense",
       );
     } catch (e) {
-      print("Error fetching user: $e");
+      log("Error fetching user: $e");
     } finally {
-      isLoading1.value = false; // Important!
+      isLoading1.value = false;
     }
   }
 }

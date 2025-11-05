@@ -410,88 +410,94 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   }
 
   // --- Attendance capture + match (high-res photo capture) ---
-  Future<void> _captureAndMatchFace() async {
-    if (_isCapturing || _cameraController == null || !mounted) return;
-    setState(() => _isCapturing = true);
+Future<void> _captureAndMatchFace() async {
+  if (_isCapturing || _cameraController == null || !mounted) return;
+  setState(() => _isCapturing = true);
 
-    try {
-      final cameraImage = await _cameraController!.takePicture();
-      final file = File(cameraImage.path);
-      final imageBytes = await file.readAsBytes();
+  try {
+    final cameraImage = await _cameraController!.takePicture();
+    final file = File(cameraImage.path);
+    final imageBytes = await file.readAsBytes();
 
-      final inputImage = InputImage.fromFilePath(cameraImage.path);
-      final faces = await _faceDetector!.processImage(inputImage);
+    final inputImage = InputImage.fromFilePath(cameraImage.path);
+    final faces = await _faceDetector!.processImage(inputImage);
 
-      if (faces.isNotEmpty) {
-        final face = faces.first;
-        final decodedImage = img.decodeImage(imageBytes)!;
-        final rect = face.boundingBox;
+    if (faces.isNotEmpty) {
+      final face = faces.first;
+      final decodedImage = img.decodeImage(imageBytes)!;
+      final rect = face.boundingBox;
 
-        final left = rect.left.toInt().clamp(0, decodedImage.width - 1);
-        final top = rect.top.toInt().clamp(0, decodedImage.height - 1);
-        final width = rect.width.toInt().clamp(1, decodedImage.width - left);
-        final height = rect.height.toInt().clamp(1, decodedImage.height - top);
+      final left = rect.left.toInt().clamp(0, decodedImage.width - 1);
+      final top = rect.top.toInt().clamp(0, decodedImage.height - 1);
+      final width = rect.width.toInt().clamp(1, decodedImage.width - left);
+      final height = rect.height.toInt().clamp(1, decodedImage.height - top);
 
-        final faceCrop =
-            img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
-        final embedding = _facenet.getEmbedding(faceCrop);
+      final faceCrop =
+          img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
+      final embedding = _facenet.getEmbedding(faceCrop);
 
-        if (embedding != null && widget.allEmployees != null) {
-          Data? matchedEmployee;
-          double bestScore = -1.0;
+      if (embedding != null && widget.allEmployees != null) {
+        Data? matchedEmployee;
+        double bestScore = -1.0;
 
-          for (final emp in widget.allEmployees!) {
-            final storedEmbeddings = emp.biometricEmpId!
-                .map<List<double>>(
-                    (e) => (e as List).map<double>((v) => v.toDouble()).toList())
-                .toList();
+        for (final emp in widget.allEmployees!) {
+          final storedEmbeddings = emp.biometricEmpId!
+              .map<List<double>>(
+                  (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+              .toList();
 
-            for (var s in storedEmbeddings) {
-              final sim = _cosineSimilarity(embedding, s);
-              if (sim > bestScore) {
-                bestScore = sim;
-                matchedEmployee = emp;
-              }
+          for (var s in storedEmbeddings) {
+            final sim = _cosineSimilarity(embedding, s);
+            if (sim > bestScore) {
+              bestScore = sim;
+              matchedEmployee = emp;
             }
           }
+        }
 
-          if (matchedEmployee != null && bestScore >= _matchingThreshold) {
-            if (mounted) setState(() => _message = "✅ ${matchedEmployee?.name} Verified!");
-            // Non-blocking call to controller (should handle its own network)
-            try {
-              widget.controller?.verifyAttendance(
-                  embedding, matchedEmployee.employeeId.toString());
-            } catch (e) {
-              debugPrint("Controller verifyAttendance error: $e");
-            }
-            await Future.delayed(const Duration(seconds: 2));
-          } else {
-            if (mounted) setState(() => _message = "⚠️ No Match Found. Try again.");
-            await Future.delayed(const Duration(seconds: 2));
+        if (matchedEmployee != null && bestScore >= _matchingThreshold) {
+          if (mounted) {
+            setState(() => _message = "✅ ${matchedEmployee?.name} Verified!");
           }
+
+          try {
+            widget.controller?.verifyAttendance(
+                embedding, matchedEmployee.employeeId.toString());
+          } catch (e) {
+            debugPrint("Controller verifyAttendance error: $e");
+          }
+
+          // ✅ Add delay after successful match
+          debugPrint("⏳ Waiting 10 seconds before next scan...");
+          await Future.delayed(const Duration(seconds: 3));
+
         } else {
-          if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
-          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) setState(() => _message = "⚠️ No Match Found. Try again.");
+          await Future.delayed(const Duration(seconds: 2));
         }
       } else {
-        if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
+        if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
         await Future.delayed(const Duration(milliseconds: 500));
       }
-    } catch (e) {
-      debugPrint("Error capturing face: $e");
-      if (mounted) setState(() => _message = "Error capturing face.");
-      await Future.delayed(const Duration(seconds: 1));
-    } finally {
-      if (mounted) {
-        setState(() {
-          // Reset message based on dormant state
-          _message =
-              _isDormant ? "Sleeping... (no face detected)" : "Show your face to capture";
-          _isCapturing = false;
-        });
-      }
+    } else {
+      if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+  } catch (e) {
+    debugPrint("Error capturing face: $e");
+    if (mounted) setState(() => _message = "Error capturing face.");
+    await Future.delayed(const Duration(seconds: 1));
+  } finally {
+    if (mounted) {
+      setState(() {
+        // Reset message based on dormant state
+        _message =
+            _isDormant ? "Sleeping... (no face detected)" : "Show your face to capture";
+        _isCapturing = false;
+      });
     }
   }
+}
 
   // --- Registration capture (manual) ---
   Future<void> _captureForRegistration() async {

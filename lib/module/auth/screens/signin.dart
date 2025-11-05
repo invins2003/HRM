@@ -18,9 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> formKey = GlobalKey();
   bool _passwordVisible = false;
 
-  final BiometricController biometricController = Get.put(
-    BiometricController(),
-  );
   final AuthController authController = Get.find<AuthController>();
 
   @override
@@ -138,15 +135,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       onPressed: () async {
                                         if (formKey.currentState!.validate()) {
-                                          bool success = await authController
+                                          await authController
                                               .loginController(
                                                 emailController.text,
                                                 passwordController.text,
                                               );
-                                          if (success) {
-                                            biometricController
-                                                .askBiometricPermission();
-                                          }
+                                          // if (success) {
+                                          //   biometricController
+                                          //       .askBiometricPermission();
+                                          // }
                                         }
                                       },
                                       child: Ink(
