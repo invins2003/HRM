@@ -1,16 +1,11 @@
-import 'dart:math';
 import 'package:camera/camera.dart';
-import 'package:erp_admin/common/faceattendence.dart'; // Make sure this path is correct for FaceProcessingScreen
+import 'package:erp_admin/common/faceattendence.dart';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
-import 'package:erp_admin/module/RegisterEmployee/screens/RegisterEmployee.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../Controller/EmployeeListController.dart';
 import '../EmployeeListWidget.dart';
-
-// Import your FaceProcessingScreen
-// import 'package:erp_admin/path/to/FaceProcessingScreen.dart';
 
 class Dashboardscreen extends StatefulWidget {
   const Dashboardscreen({super.key});
@@ -25,44 +20,38 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   );
 
   DateTime selectedDate = DateTime.now();
-  // ✅ _isProcessing flag is NO LONGER NEEDED here.
-  // The FaceProcessingScreen will handle its own UI state.
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
-      controller.listtController();
-      controller.presentListtController(selectedDate);
+    Future.delayed(Duration.zero, () async {
+      await controller.listtController();
+      await controller.presentListtController(selectedDate);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // The Stack is no longer needed unless you add the loader back for other reasons
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showEmployeeSearchDialog(context),
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add),
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(children: [_buildActionTile("Check-in")]),
-          ),
-          const SizedBox(height: 10),
-          _buildDatePicker(context),
-          Expanded(child: _buildEmployeeList(context)),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(children: [_buildActionTile("Check-in")]),
+            ),
+            const SizedBox(height: 10),
+            _buildDatePicker(context),
+            Expanded(child: _buildEmployeeList(context)),
+          ],
+        ),
       ),
     );
   }
 
-  // --- Widgets ---
+  // ---------------- Date Picker ----------------
   Widget _buildDatePicker(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -126,6 +115,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     );
   }
 
+  // ---------------- Employee List ----------------
   Widget _buildEmployeeList(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
@@ -134,8 +124,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
       if (controller.errorMs.isNotEmpty) {
         return Center(
-          child: Text(controller.errorMs.value,
-              style: const TextStyle(color: Colors.red)),
+          child: Text(
+            controller.errorMs.value,
+            style: const TextStyle(color: Colors.red),
+          ),
         );
       }
 
@@ -146,7 +138,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
             children: [
               const Icon(Icons.people_outline, size: 60, color: Colors.grey),
               const SizedBox(height: 10),
-              const Text("No employees found",
+              const Text("No attendance records found",
                   style: TextStyle(fontSize: 16, color: Colors.black54)),
               const SizedBox(height: 15),
               ElevatedButton.icon(
@@ -178,11 +170,14 @@ class _DashboardscreenState extends State<Dashboardscreen> {
           await controller.listtController();
           await controller.presentListtController(selectedDate);
         },
-        child: EmployeeListWidget(presentemployeelist: controller.attendanceList),
+        child: EmployeeListWidget(
+          presentemployeelist: controller.attendanceList,
+        ),
       );
     });
   }
 
+  // ---------------- Check-in Button ----------------
   Widget _buildActionTile(String label) {
     return Expanded(
       child: GestureDetector(
@@ -220,119 +215,15 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     );
   }
 
-  // --- Employee Search Dialog (for registration only) ---
-  void _showEmployeeSearchDialog(BuildContext context) {
-    final searchController = TextEditingController();
-    List<Data> filteredList = controller.employeelisttt
-        .where((emp) =>
-            emp.isActive == true &&
-            (emp.biometricEmpId == null || emp.biometricEmpId!.isEmpty))
-        .toList();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text("Select the Employee"),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: Column(
-                children: [
-                  TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: "Enter employee name...",
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        filteredList = controller.employeelisttt
-                            .where((emp) =>
-                                emp.isActive == true &&
-                                (emp.name ?? "")
-                                    .toLowerCase()
-                                    .contains(value.toLowerCase()))
-                            .toList();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: filteredList.isEmpty
-                        ? const Center(child: Text("No active employee found"))
-                        : ListView.builder(
-                            itemCount: filteredList.length,
-                            itemBuilder: (context, index) {
-                              final employee = filteredList[index];
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.green,
-                                  child: Text(
-                                    employee.name!.isNotEmpty
-                                        ? employee.name![0].toUpperCase()
-                                        : "?",
-                                    style:
-                                        const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                title: Text(employee.name ?? "No Name"),
-                                subtitle: Text(
-                                    "ID: ${employee.employeeId ?? 'N/A'}"),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  if (employee.biometricEmpId != null &&
-                                      employee.biometricEmpId!.isNotEmpty) {
-                                    Get.snackbar(
-                                      "Already Registered",
-                                      "${employee.name} is already registered.",
-                                      backgroundColor: Colors.redAccent,
-                                      colorText: Colors.white,
-                                      snackPosition: SnackPosition.BOTTOM,
-                                    );
-                                  } else {
-                                    Get.to(() => RegisterEmployeeScreen(
-                                          employee: employee,
-                                        ));
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
-          );
-        });
-      },
-    );
-  }
-
-  // --- Automatic Face Matching (MODIFIED) ---
+  // ---------------- Face Check-in ----------------
   Future<void> _handleAutoAttendance(BuildContext context) async {
     try {
       final cameras = await availableCameras();
-      // Default to front camera
-      final firstCamera = cameras.firstWhere(
+      final frontCamera = cameras.firstWhere(
         (cam) => cam.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
 
-      // Get the list of registered employees BEFORE opening the camera
       final List<Data> allEmployees = controller.employeelisttt
           .where((e) =>
               e.isActive == true &&
@@ -342,8 +233,8 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
       if (allEmployees.isEmpty) {
         Get.snackbar(
-          "No Registered Employees",
-          "Please register an employee's face first.",
+          "No Registered Faces",
+          "Please ensure some employees have registered faces.",
           backgroundColor: Colors.orangeAccent,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -351,23 +242,18 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         return;
       }
 
-      // Navigate to the continuous scanning screen.
-      // Pass the camera, the employee list, and the controller.
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => FaceProcessingScreen(
-            camera: firstCamera,
+            camera: frontCamera,
             allEmployees: allEmployees,
             controller: controller,
           ),
         ),
       );
 
-      // After the camera screen is closed (e.g., user presses back),
-      // refresh the present list.
       await controller.presentListtController(selectedDate);
-      
     } catch (e, st) {
       debugPrint("Error in auto check-in: $e\n$st");
       Get.snackbar(
@@ -377,9 +263,5 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         colorText: Colors.white,
       );
     }
-    // NO 'finally' block or _isProcessing logic needed here anymore.
   }
-
-  // _cosineSimilarity is no longer needed here.
-  // It will be moved to FaceProcessingScreen.
 }

@@ -1,4 +1,5 @@
 import 'package:erp_admin/config/env_config.dart';
+import 'package:erp_admin/module/DashBoard/Screens/DashBoardScreen.dart';
 import 'package:erp_admin/theme/themes.dart';
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
@@ -6,20 +7,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:local_auth/local_auth.dart';
+
 import 'module/auth/screens/signin.dart';
 import 'module/MainScreen/MainScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EnvConfig.load();
-  await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
+
+  await FlutterWindowManagerPlus.addFlags(
+    FlutterWindowManagerPlus.FLAG_SECURE,
+  );
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight
   ]);
+
   await dep.init();
   runApp(const MyApp());
 }
@@ -27,40 +33,16 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  /// ✅ Check login token only (no biometric)
   Future<Widget> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString("USER_TOKEN");
-    bool biometricEnabled = prefs.getBool("BIOMETRIC_ENABLED") ?? false;
 
-    // ✅ First time or logged out
-    if (token == null || token.isEmpty) {
+    if (token != null && token.isNotEmpty) {
+      return const Dashboardscreen();
+    } else {
       return LoginScreen();
     }
-
-    // ✅ If biometric was enabled
-    if (biometricEnabled) {
-      final auth = LocalAuthentication();
-      try {
-        bool authenticated = await auth.authenticate(
-          localizedReason: "Please authenticate with fingerprint",
-          options: const AuthenticationOptions(
-            biometricOnly: true,
-            stickyAuth: true,
-          ),
-        );
-
-        if (authenticated) {
-          return const Mainscreen();
-        } else {
-          return LoginScreen(); // cancel → login manually
-        }
-      } catch (e) {
-        return LoginScreen(); // fallback
-      }
-    }
-
-    // ✅ If biometric not enabled → always go to login
-    return LoginScreen();
   }
 
   @override
