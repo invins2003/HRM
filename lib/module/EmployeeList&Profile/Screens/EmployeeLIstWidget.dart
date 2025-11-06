@@ -1142,7 +1142,7 @@ void _showManageAttendanceDialog(
     );
     if (picked != null) {
       final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
-      timeController.text = DateFormat("HH:mm:ss").format(dt);
+      timeController2.text = DateFormat("HH:mm:ss").format(dt);
     }
   }
 
