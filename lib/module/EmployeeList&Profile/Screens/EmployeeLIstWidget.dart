@@ -1428,21 +1428,220 @@ void _showEarlyLeaveDialog(
 //     ),
 //   );
 // }
-
+//
+// void _showOverTimeDialog(
+//   BuildContext context,
+//   EmployeeListController controller,
+//   Data employee,
+// ) {
+//   final dateController2 = TextEditingController();
+//   final reasonController2 = TextEditingController();
+//   int selectedHour = 1; // default 1 hour
+//
+//   Future<void> _pickDate() async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//       initialDate: DateTime.now(),
+//       builder: (BuildContext context, Widget? child) {
+//         return Theme(
+//           data: ThemeData.light().copyWith(
+//             colorScheme: const ColorScheme.light(
+//               primary: Colors.green,
+//               onPrimary: Colors.white,
+//               onSurface: Colors.black,
+//             ),
+//             textButtonTheme: TextButtonThemeData(
+//               style: TextButton.styleFrom(foregroundColor: Colors.green),
+//             ),
+//           ),
+//           child: child!,
+//         );
+//       },
+//     );
+//     if (picked != null) {
+//       dateController2.text = DateFormat("yyyy-MM-dd").format(picked);
+//     }
+//   }
+//
+//   Get.dialog(
+//     Dialog(
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       backgroundColor: Colors.white,
+//       child: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             Text(
+//               "Overtime - ${employee.name}",
+//               style: const TextStyle(
+//                 fontSize: 18,
+//                 fontWeight: FontWeight.bold,
+//                 color: Colors.black87,
+//               ),
+//             ),
+//             const SizedBox(height: 16),
+//
+//             /// Date Picker
+//             TextField(
+//               controller: dateController2,
+//               readOnly: true,
+//               decoration: InputDecoration(
+//                 labelText: "Date (yyyy-MM-dd)",
+//                 suffixIcon: IconButton(
+//                   icon: const Icon(Icons.calendar_today),
+//                   onPressed: _pickDate,
+//                 ),
+//                 border: const OutlineInputBorder(),
+//               ),
+//             ),
+//             const SizedBox(height: 12),
+//
+//             /// Hours Picker Dropdown
+//             DropdownButtonFormField<int>(
+//               value: selectedHour,
+//               decoration: const InputDecoration(
+//                 labelText: "Overtime (hours)",
+//                 border: OutlineInputBorder(),
+//               ),
+//               items: List.generate(24, (index) => index + 1)
+//                   .map(
+//                     (hour) => DropdownMenuItem(
+//                       value: hour,
+//                       child: Text("$hour hr${hour > 1 ? 's' : ''}"),
+//                     ),
+//                   )
+//                   .toList(),
+//               onChanged: (val) {
+//                 if (val != null) selectedHour = val;
+//               },
+//             ),
+//             const SizedBox(height: 12),
+//
+//             /// Reason Field
+//             TextField(
+//               controller: reasonController2,
+//               decoration: const InputDecoration(
+//                 labelText: "Reason",
+//                 border: OutlineInputBorder(),
+//               ),
+//             ),
+//             const SizedBox(height: 16),
+//
+//             /// Buttons
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.end,
+//               children: [
+//                 TextButton(
+//                   onPressed: () => Get.back(),
+//                   child: const Text("Cancel"),
+//                 ),
+//                 const SizedBox(width: 8),
+//                 ElevatedButton(
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.green,
+//                     foregroundColor: Colors.white,
+//                   ),
+//                   onPressed: () {
+//                     // ✅ VALIDATION SECTION
+//                     if (employee.employeeId == null) {
+//                       ScaffoldMessenger.of(context).showSnackBar(
+//                         const SnackBar(
+//                           content: Text("Employee ID not available ❌"),
+//                           backgroundColor: Colors.redAccent,
+//                           behavior: SnackBarBehavior.floating,
+//                           margin: EdgeInsets.only(
+//                             bottom: 16,
+//                             left: 16,
+//                             right: 16,
+//                           ),
+//                         ),
+//                       );
+//                       return;
+//                     }
+//
+//                     if (dateController2.text.isEmpty) {
+//                       ScaffoldMessenger.of(context).showSnackBar(
+//                         const SnackBar(
+//                           content: Text("Please select a date ⚠️"),
+//                           backgroundColor: Colors.redAccent,
+//                           behavior: SnackBarBehavior.floating,
+//                           margin: EdgeInsets.only(
+//                             bottom: 16,
+//                             left: 16,
+//                             right: 16,
+//                           ),
+//                         ),
+//                       );
+//                       return;
+//                     }
+//
+//                     if (reasonController2.text.trim().isEmpty) {
+//                       ScaffoldMessenger.of(context).showSnackBar(
+//                         const SnackBar(
+//                           content: Text("Please enter a reason ⚠️"),
+//                           backgroundColor: Colors.redAccent,
+//                           behavior: SnackBarBehavior.floating,
+//                           margin: EdgeInsets.only(
+//                             bottom: 16,
+//                             left: 16,
+//                             right: 16,
+//                           ),
+//                         ),
+//                       );
+//                       return;
+//                     }
+//
+//                     // ✅ If all validations passed
+//                     final overtimeText =
+//                         selectedHour.toString().padLeft(2, '0') + ":00:00";
+//
+//                     controller.updateOverTimeController(
+//                       empId: employee.employeeId.toString(),
+//                       date: dateController2.text.trim(),
+//                       overtime: overtimeText,
+//                       reason: reasonController2.text.trim(),
+//                     );
+//
+//                     Get.back();
+//
+//                     // ✅ Success Snackbar
+//                     // ScaffoldMessenger.of(context).showSnackBar(
+//                     //   const SnackBar(
+//                     //     content: Text("Overtime submitted successfully ✅"),
+//                     //     backgroundColor: Colors.green,
+//                     //     behavior: SnackBarBehavior.fixed,
+//                     //     duration: Duration(seconds: 2),
+//                     //   ),
+//                     // );
+//                   },
+//                   child: const Text("Submit"),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     ),
+//   );
+// }
 void _showOverTimeDialog(
   BuildContext context,
   EmployeeListController controller,
   Data employee,
 ) {
-  final dateController2 = TextEditingController();
-  final reasonController2 = TextEditingController();
-  int selectedHour = 1; // default 1 hour
+  final dateController = TextEditingController();
+  final timeController = TextEditingController();
+  final reasonController = TextEditingController();
 
+  // 🔹 Date Picker
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: DateTime(2100),
       initialDate: DateTime.now(),
       builder: (BuildContext context, Widget? child) {
         return Theme(
@@ -1460,8 +1659,21 @@ void _showOverTimeDialog(
         );
       },
     );
+
     if (picked != null) {
-      dateController2.text = DateFormat("yyyy-MM-dd").format(picked);
+      dateController.text = DateFormat("yyyy-MM-dd").format(picked);
+    }
+  }
+
+  // 🔹 Time Picker (for hours, minutes, and seconds)
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
+      timeController.text = DateFormat("HH:mm:ss").format(dt);
     }
   }
 
@@ -1469,24 +1681,13 @@ void _showOverTimeDialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: _buildThemedDialogContent(
+        title: "Overtime - ${employee.name}",
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              "Overtime - ${employee.name}",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-
             /// Date Picker
             TextField(
-              controller: dateController2,
+              controller: dateController,
               readOnly: true,
               decoration: InputDecoration(
                 labelText: "Date (yyyy-MM-dd)",
@@ -1499,30 +1700,24 @@ void _showOverTimeDialog(
             ),
             const SizedBox(height: 12),
 
-            /// Hours Picker Dropdown
-            DropdownButtonFormField<int>(
-              value: selectedHour,
-              decoration: const InputDecoration(
-                labelText: "Overtime (hours)",
-                border: OutlineInputBorder(),
+            /// Time Picker (HH:mm:ss)
+            TextField(
+              controller: timeController,
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: "Overtime Duration (HH:mm:ss)",
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.access_time),
+                  onPressed: _pickTime,
+                ),
+                border: const OutlineInputBorder(),
               ),
-              items: List.generate(24, (index) => index + 1)
-                  .map(
-                    (hour) => DropdownMenuItem(
-                      value: hour,
-                      child: Text("$hour hr${hour > 1 ? 's' : ''}"),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) selectedHour = val;
-              },
             ),
             const SizedBox(height: 12),
 
             /// Reason Field
             TextField(
-              controller: reasonController2,
+              controller: reasonController,
               decoration: const InputDecoration(
                 labelText: "Reason",
                 border: OutlineInputBorder(),
@@ -1530,7 +1725,7 @@ void _showOverTimeDialog(
             ),
             const SizedBox(height: 16),
 
-            /// Buttons
+            /// Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -1562,7 +1757,7 @@ void _showOverTimeDialog(
                       return;
                     }
 
-                    if (dateController2.text.isEmpty) {
+                    if (dateController.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Please select a date ⚠️"),
@@ -1578,7 +1773,23 @@ void _showOverTimeDialog(
                       return;
                     }
 
-                    if (reasonController2.text.trim().isEmpty) {
+                    if (timeController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please select overtime duration ⚠️"),
+                          backgroundColor: Colors.redAccent,
+                          behavior: SnackBarBehavior.floating,
+                          margin: EdgeInsets.only(
+                            bottom: 16,
+                            left: 16,
+                            right: 16,
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (reasonController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Please enter a reason ⚠️"),
@@ -1594,20 +1805,17 @@ void _showOverTimeDialog(
                       return;
                     }
 
-                    // ✅ If all validations passed
-                    final overtimeText =
-                        selectedHour.toString().padLeft(2, '0') + ":00:00";
-
+                    // ✅ All validations passed
                     controller.updateOverTimeController(
                       empId: employee.employeeId.toString(),
-                      date: dateController2.text.trim(),
-                      overtime: overtimeText,
-                      reason: reasonController2.text.trim(),
+                      date: dateController.text.trim(),
+                      overtime: timeController.text.trim(),
+                      reason: reasonController.text.trim(),
                     );
 
                     Get.back();
 
-                    // ✅ Success Snackbar
+                    // ✅ Success Snackbar (bottom)
                     // ScaffoldMessenger.of(context).showSnackBar(
                     //   const SnackBar(
                     //     content: Text("Overtime submitted successfully ✅"),
