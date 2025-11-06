@@ -2,6 +2,7 @@
 class AttendanceStatusRequest {
   String date;
   String status;
+  String? clockOut;
   String? timestamp; 
   String? reason;// optional for Absent
 
@@ -9,7 +10,8 @@ class AttendanceStatusRequest {
     required this.date,
     required this.status,
     this.timestamp,
-    this.reason
+    this.reason,
+    this.clockOut
   });
 
   Map<String, dynamic> toJson() {
@@ -18,7 +20,10 @@ class AttendanceStatusRequest {
       "status": status,
     };
     if (timestamp != null && timestamp!.isNotEmpty) {
-      map["timestamp"] = timestamp!;
+      map["clock_in"] = timestamp!;
+    }
+    if (clockOut != null && clockOut!.isNotEmpty) {
+      map["clock_out"] = clockOut!;
     }
     if (reason != null && reason!.isNotEmpty) {
       map["reason"] = reason!;
@@ -30,8 +35,9 @@ class AttendanceStatusRequest {
     return AttendanceStatusRequest(
       date: json['date'] ?? "",
       status: json['status'] ?? "",
-      timestamp: json['timestamp'],
+      timestamp: json['clock_in'],
       reason: json['reason'],
+      clockOut: json['clock_out']
     );
   }
 }

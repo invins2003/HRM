@@ -50,7 +50,7 @@ class EmployeeListRepo extends GetxController implements GetxService {
     required String overtime,
     required String reason,
   }) async {
-    final body = {"date": date, "overtime": overtime, "reason": reason};
+    final body = {"date": date, "clock_out": overtime, "reason": reason};
 
     final response = await apiClient.patchData(
       "${Constants.OVERTIME}$empId",

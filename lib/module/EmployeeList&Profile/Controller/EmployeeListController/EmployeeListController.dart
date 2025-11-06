@@ -172,7 +172,8 @@ class EmployeeListController extends GetxController {
   Future<void> markAttendanceController({
     required String empId,
     required String date,
-    required String status, // "Present" or "Absent"
+    required String status,
+    String? clockOut, // "Present" or "Absent"
     String? timestamp,
     String? reason, // optional, required for Present
   }) async {
@@ -184,6 +185,7 @@ class EmployeeListController extends GetxController {
         status: status,
         timestamp: timestamp,
         reason: reason,
+        clockOut: clockOut
       );
 
       final response = await employeeListRepo.markAttendance(
