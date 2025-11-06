@@ -1135,6 +1135,17 @@ void _showManageAttendanceDialog(
     }
   }
 
+  Future<void> _pickTime2() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
+      timeController.text = DateFormat("HH:mm:ss").format(dt);
+    }
+  }
+
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1169,7 +1180,7 @@ void _showManageAttendanceDialog(
                         controller: timeController,
                         readOnly: true,
                         decoration: InputDecoration(
-                          labelText: "Clock (HH:mm:ss)",
+                          labelText: "Clock In (HH:mm:ss)",
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.access_time),
                             onPressed: _pickTime,
@@ -1185,7 +1196,7 @@ void _showManageAttendanceDialog(
                           labelText: "Clock Out (HH:mm:ss)",
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.access_time),
-                            onPressed: _pickTime,
+                            onPressed: _pickTime2,
                           ),
                           border: const OutlineInputBorder(),
                         ),
