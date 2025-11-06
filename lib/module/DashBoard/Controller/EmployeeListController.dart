@@ -113,7 +113,7 @@ class DashBoardEmployeeList extends GetxController {
       if (response.statusCode == 200) {
         Get.snackbar(
           "Check-in Success",
-          "Attendance verified successfully ✅",
+          response.body['message'],
           backgroundColor: Colors.green,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
