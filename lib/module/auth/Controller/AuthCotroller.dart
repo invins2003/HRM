@@ -47,7 +47,7 @@ class AuthController extends GetxController {
       } else {
         Get.snackbar(
           "Faild",
-          "Login failed ${response.statusCode}",
+          " ${response.body['message']}",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
           colorText: Colors.white,
