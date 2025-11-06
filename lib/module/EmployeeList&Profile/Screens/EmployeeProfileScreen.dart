@@ -42,7 +42,6 @@ class EmployeeProfileScreen extends StatelessWidget {
   }
   // formatter:on
 
-
   @override
   Widget build(BuildContext context) {
     final EmployeeProfileController controller = Get.put(
@@ -100,9 +99,15 @@ class EmployeeProfileScreen extends StatelessWidget {
                   indicatorWeight: 3,
                   tabs: const [
                     Tab(icon: Icon(Icons.person_outline), text: "Personal"),
-                    Tab(icon: Icon(Icons.business_center_outlined), text: "Company"),
-                    Tab(icon: Icon(Icons.account_balance_outlined), text: "Bank"),
-                    Tab(icon: Icon(Icons.settings_outlined), text: "System"),
+                    Tab(
+                      icon: Icon(Icons.business_center_outlined),
+                      text: "Company",
+                    ),
+                    Tab(
+                      icon: Icon(Icons.account_balance_outlined),
+                      text: "Bank",
+                    ),
+                    // Tab(icon: Icon(Icons.settings_outlined), text: "System"),
                   ],
                 ),
               ),
@@ -114,61 +119,155 @@ class EmployeeProfileScreen extends StatelessWidget {
                     // 1. Personal Info Page
                     _buildInfoPage(
                       children: [
-                        _infoCard(icon: Icons.badge, title: "Employee ID", value: profile.employeeId ?? "--"),
+                        _infoCard(
+                          icon: Icons.badge,
+                          title: "Employee ID",
+                          value: profile.employeeId ?? "--",
+                        ),
                         // <-- UPDATED HERE
-                        _infoCard(icon: Icons.numbers_sharp, title: "Employee Type", value: profile.employeeType ?? "--"),
-                        _infoCard(icon: Icons.calendar_today, title: "Date of Birth", value: _formatDateOnly(profile.dob)),
-                        _infoCard(icon: Icons.person_2_rounded, title: "Father's Name", value: profile.fatherName ?? "--"),
-                        _infoCard(icon: Icons.person, title: "Gender", value: profile.gender ?? "--"),
-                        _infoCard(icon: Icons.phone, title: "Phone", value: profile.phone ?? "--"),
-                        _infoCard(icon: Icons.email, title: "Email", value: profile.email ?? "--"),
-                        _infoCard(icon: Icons.home, title: "Address", value: profile.address ?? "--", isMultiLine: true),
-                        _infoCard(icon: Icons.numbers, title: "UAN Number", value: profile.uanNumber ?? "--"),
-                        _infoCard(icon: Icons.numbers_sharp, title: "IP Number", value: profile.ipNumber ?? "--"),
-                        _infoCard(icon: Icons.perm_identity_rounded, title: "Aadhaar Number", value: profile.aadhaarNumber ?? "--"),
-                        
-
+                        _infoCard(
+                          icon: Icons.numbers_sharp,
+                          title: "Employee Type",
+                          value: profile.employeeType ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.calendar_today,
+                          title: "Date of Birth",
+                          value: _formatDateOnly(profile.dob),
+                        ),
+                        _infoCard(
+                          icon: Icons.person_2_rounded,
+                          title: "Father's Name",
+                          value: profile.fatherName ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.person,
+                          title: "Gender",
+                          value: profile.gender ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.phone,
+                          title: "Phone",
+                          value: profile.phone ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.email,
+                          title: "Email",
+                          value: profile.email ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.home,
+                          title: "Address",
+                          value: profile.address ?? "--",
+                          isMultiLine: true,
+                        ),
+                        _infoCard(
+                          icon: Icons.numbers,
+                          title: "UAN Number",
+                          value: profile.uanNumber ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.numbers_sharp,
+                          title: "IP Number",
+                          value: profile.ipNumber ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.perm_identity_rounded,
+                          title: "Aadhaar Number",
+                          value: profile.aadhaarNumber ?? "--",
+                        ),
                       ],
                     ),
 
                     // 2. Company Info Page
                     _buildInfoPage(
                       children: [
-                        _infoCard(icon: Icons.apartment, title: "Site", value: profile.branch?.name ?? "--"),
-                        _infoCard(icon: Icons.account_tree, title: "Department", value: profile.department?.name ?? "--"),
-                        _infoCard(icon: Icons.work, title: "Designation", value: profile.designation?.name ?? "--"),
+                        _infoCard(
+                          icon: Icons.apartment,
+                          title: "Site",
+                          value: profile.branch?.name ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.account_tree,
+                          title: "Department",
+                          value: profile.department?.name ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.work,
+                          title: "Designation",
+                          value: profile.designation?.name ?? "--",
+                        ),
                         // <-- UPDATED HERE
-                        _infoCard(icon: Icons.calendar_month, title: "Date of Joining", value: _formatDateOnly(profile.companyDoj)),
-                        _infoCard(icon: Icons.monetization_on, title: "Salary Type", value: profile.salaryType ?? "--"),
-                        _infoCard(icon: Icons.payments, title: "Salary", value: profile.salary ?? "--"),
-                        _infoCard(icon: Icons.directions_walk_outlined, title: "Rejoin Reason", value: profile.rejoinReason ?? "--",isMultiLine: true),
-
-
+                        _infoCard(
+                          icon: Icons.calendar_month,
+                          title: "Date of Joining",
+                          value: _formatDateOnly(profile.companyDoj),
+                        ),
+                        _infoCard(
+                          icon: Icons.monetization_on,
+                          title: "Salary Type",
+                          value: profile.salaryType ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.payments,
+                          title: "Salary",
+                          value: profile.salary ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.directions_walk_outlined,
+                          title: "Rejoin Reason",
+                          value: profile.rejoinReason ?? "--",
+                          isMultiLine: true,
+                        ),
                       ],
                     ),
 
                     // 3. Bank Details Page
                     _buildInfoPage(
                       children: [
-                        _infoCard(icon: Icons.person_outline, title: "Account Holder", value: profile.accountHolderName ?? "--"),
-                        _infoCard(icon: Icons.credit_card, title: "Account Number", value: profile.accountNumber ?? "--"),
-                        _infoCard(icon: Icons.account_balance, title: "Bank Name", value: profile.bankName ?? "--"),
-                        _infoCard(icon: Icons.qr_code, title: "Bank Identifier Code", value: profile.bankIdentifierCode ?? "--"),
-                        _infoCard(icon: Icons.location_on, title: "Branch Location", value: profile.branchLocation ?? "--"),
-                        _infoCard(icon: Icons.numbers, title: "Tax Payer ID", value: profile.taxPayerId ?? "--"),
+                        _infoCard(
+                          icon: Icons.person_outline,
+                          title: "Account Holder",
+                          value: profile.accountHolderName ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.credit_card,
+                          title: "Account Number",
+                          value: profile.accountNumber ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.account_balance,
+                          title: "Bank Name",
+                          value: profile.bankName ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.qr_code,
+                          title: "Bank Identifier Code",
+                          value: profile.bankIdentifierCode ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.location_on,
+                          title: "Branch Location",
+                          value: profile.branchLocation ?? "--",
+                        ),
+                        _infoCard(
+                          icon: Icons.numbers,
+                          title: "Tax Payer ID",
+                          value: profile.taxPayerId ?? "--",
+                        ),
                       ],
                     ),
 
                     // 4. System Info Page
-                    _buildInfoPage(
-                      children: [
-                        _infoCard(icon: Icons.lock_outline, title: "Account Active", value: profile.isActive == true ? "Yes" : "No"),
-                        // <-- UPDATED HERE
-                        _infoCard(icon: Icons.schedule, title: "Created At", value: _formatDateTime(profile.createdAt)),
-                        // <-- UPDATED HERE
-                        _infoCard(icon: Icons.update, title: "Updated At", value: _formatDateTime(profile.updatedAt)),
-                      ],
-                    ),
+                    // _buildInfoPage(
+                    //   children: [
+                    //     _infoCard(icon: Icons.lock_outline, title: "Account Active", value: profile.isActive == true ? "Yes" : "No"),
+                    //     // <-- UPDATED HERE
+                    //     _infoCard(icon: Icons.schedule, title: "Created At", value: _formatDateTime(profile.createdAt)),
+                    //     // <-- UPDATED HERE
+                    //     _infoCard(icon: Icons.update, title: "Updated At", value: _formatDateTime(profile.updatedAt)),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),
@@ -187,11 +286,7 @@ class EmployeeProfileScreen extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -238,9 +333,7 @@ class EmployeeProfileScreen extends StatelessWidget {
   Widget _buildInfoPage({required List<Widget> children}) {
     return SingleChildScrollView(
       // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
@@ -302,9 +395,9 @@ class EmployeeProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          const Divider() // This divider will now only appear if the card is shown
+          const Divider(), // This divider will now only appear if the card is shown
         ],
       ),
     );
   }
-}  
+}

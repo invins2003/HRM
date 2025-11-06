@@ -256,7 +256,6 @@ class ListWidget extends StatelessWidget {
   }
 }
 
-
 void _showResignationDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -665,8 +664,6 @@ Widget _buildThemedDialogContent({
   );
 }
 
-
-
 void _showEarlyLeaveDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -954,7 +951,7 @@ void _showOverTimeDialog(
               controller: timeController,
               readOnly: true,
               decoration: InputDecoration(
-                labelText: "Overtime Duration (HH:mm:ss)",
+                labelText: "Clockout Time (HH:mm:ss)",
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.access_time),
                   onPressed: _pickTime,
@@ -1085,7 +1082,6 @@ void _showOverTimeDialog(
   );
 }
 
-
 void _showManageAttendanceDialog(
   BuildContext context,
   EmployeeListController controller,
@@ -1142,7 +1138,7 @@ void _showManageAttendanceDialog(
     );
     if (picked != null) {
       final dt = DateTime(0, 1, 1, picked.hour, picked.minute);
-      timeController.text = DateFormat("HH:mm:ss").format(dt);
+      timeController2.text = DateFormat("HH:mm:ss").format(dt);
     }
   }
 
@@ -1335,7 +1331,7 @@ void _showManageAttendanceDialog(
                       timestamp: statusController.value == "Present"
                           ? "${dateController.text.trim()} ${timeController.text.trim()}"
                           : null,
-                          clockOut: statusController.value == "Present"
+                      clockOut: statusController.value == "Present"
                           ? "${dateController.text.trim()} ${timeController2.text.trim()}"
                           : null,
                       status: statusController.value,
