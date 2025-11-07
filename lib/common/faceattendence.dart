@@ -102,7 +102,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   final int _frameIntervalMs = 600; // process ~1.66 frames/sec
   final int _cameraRestartHours = 2; // restart camera every 2 hours
   final int _detectorRestartHours = 6; // recreate detector every 6 hours
-  final double _matchingThreshold = 0.60; // cosine similarity threshold
+  final double _matchingThreshold = 0.70; // cosine similarity threshold
   // --- 💡 NEW: Employee refresh interval ---
   final int _employeeRefreshHours = 1; // refresh employees every 1 hour
 
@@ -336,7 +336,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     await _initCameraController();
   }
 
-  // --- UPDATED: Image stream handler (attendance only) ---
+  // --- ⚠️ UPDATED: Image stream handler (attendance only) ---
   Future<void> _onImageStream(CameraImage image) async {
     if (_isProcessingStream || _isCapturing) return;
 
@@ -363,8 +363,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
       final faces = await _faceDetector!.processImage(inputImage);
 
-      if (faces.isNotEmpty && mounted) {
-        // --- FACE DETECTED ---
+      // --- 💡 MODIFIED: Check for exactly ONE face ---
+      if (faces.length == 1 && mounted) {
+        // --- ONE FACE DETECTED ---
         _lastFaceDetectedTime = DateTime.now(); // Update activity timer
 
         if (_isDormant) {
@@ -378,7 +379,18 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
           if (mounted) setState(() => _message = "✅ Face detected! Verifying...");
           await _captureAndMatchFace();
         }
-      } else if (mounted && !_isCapturing) {
+      } 
+      // --- 💡 NEW: Check for MULTIPLE faces ---
+      else if (faces.length > 1 && mounted && !_isCapturing) {
+        // --- MULTIPLE FACES DETECTED ---
+         _lastFaceDetectedTime = DateTime.now(); // Still activity
+         if (_isDormant) { // Wake up if sleeping
+           if(mounted) setState(() => _isDormant = false);
+         }
+         if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
+      }
+      // --- This "else if" now implies faces.isEmpty ---
+      else if (mounted && !_isCapturing) { 
         // --- NO FACE DETECTED ---
         if (_isDormant) {
           // Already dormant, just ensure message is correct
@@ -458,7 +470,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // --- 💡 UPDATED: Attendance capture + match (uses _currentEmployees) ---
+  // --- ⚠️ UPDATED: Attendance capture + match (uses _currentEmployees) ---
   Future<void> _captureAndMatchFace() async {
     if (_isCapturing || _cameraController == null || !mounted) return;
     setState(() => _isCapturing = true);
@@ -471,7 +483,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       final inputImage = InputImage.fromFilePath(cameraImage.path);
       final faces = await _faceDetector!.processImage(inputImage);
 
-      if (faces.isNotEmpty) {
+      // --- 💡 MODIFIED: Check for exactly ONE face ---
+      if (faces.length == 1) {
         final face = faces.first;
         final decodedImage = img.decodeImage(imageBytes)!;
         final rect = face.boundingBox;
@@ -530,7 +543,14 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
           if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
           await Future.delayed(const Duration(milliseconds: 500));
         }
-      } else {
+      } 
+      // --- 💡 NEW: Handle multiple faces ---
+      else if (faces.length > 1) {
+         if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
+         await Future.delayed(const Duration(seconds: 2));
+      }
+      // --- This "else" now means faces.isEmpty ---
+      else {
         if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
         await Future.delayed(const Duration(milliseconds: 500));
       }
@@ -550,7 +570,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // --- Registration capture (manual) ---
+  // --- ⚠️ UPDATED: Registration capture (manual) ---
   Future<void> _captureForRegistration() async {
     if (_isCapturing || _cameraController == null || !mounted) return;
     setState(() => _isCapturing = true);
@@ -563,7 +583,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       final inputImage = InputImage.fromFilePath(cameraImage.path);
       final faces = await _faceDetector!.processImage(inputImage);
 
-      if (faces.isNotEmpty) {
+      // --- 💡 MODIFIED: Check for exactly ONE face ---
+      if (faces.length == 1) {
         final face = faces.first;
         final decodedImage = img.decodeImage(imageBytes)!;
         final rect = face.boundingBox;
@@ -581,18 +602,28 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
           final remaining = widget.maxCaptures - _capturedEmbeddings.length;
 
           if (remaining > 0) {
-            if (mounted) setState(() => _message =
+            if (mounted) {
+              setState(() => _message =
                 "✅ Captured face (${_capturedEmbeddings.length}/${widget.maxCaptures})");
+            }
           } else {
-            if (mounted) setState(
+            if (mounted) {
+              setState(
                 () => _message = "✅ All ${widget.maxCaptures} faces captured!");
+            }
             await Future.delayed(const Duration(seconds: 1));
             if (mounted) Navigator.pop(context, _capturedEmbeddings);
           }
         } else {
           if (mounted) setState(() => _message = "Error generating embedding. Try again.");
         }
-      } else {
+      } 
+      // --- 💡 NEW: Handle multiple faces ---
+      else if (faces.length > 1) {
+        if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
+      }
+      // --- This "else" now means faces.isEmpty ---
+      else {
         if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
       }
     } catch (e) {
@@ -717,9 +748,12 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _isDormant
-                    ? Colors.blueGrey.withOpacity(0.8)
-                    : Colors.green.withOpacity(0.8),
+                // --- 💡 NEW: Show red color for "too many faces" warning ---
+                color: _message.contains("Too many faces")
+                    ? Colors.red.withOpacity(0.8)
+                    : _isDormant
+                        ? Colors.blueGrey.withOpacity(0.8)
+                        : Colors.green.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

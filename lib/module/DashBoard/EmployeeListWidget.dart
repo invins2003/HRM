@@ -121,6 +121,7 @@ class EmployeeListWidget extends StatelessWidget {
                       ),
                       subtitle: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Shift: ${employee.shift?.title}",
