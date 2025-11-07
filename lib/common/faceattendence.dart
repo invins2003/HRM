@@ -1,5 +1,3 @@
-// [FaceNetService class remains unchanged as provided in your prompt]
-// ... (Your FaceNetService code) ...
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -9,9 +7,12 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-// Your FaceNetService class (unchanged)
+/// ----------------------
+/// FaceNet Service (unchanged)
+/// ----------------------
 class FaceNetService {
   Interpreter? _interpreter;
+
   Future<void> loadModel() async {
     try {
       final options = InterpreterOptions();
@@ -50,11 +51,10 @@ class FaceNetService {
 
   void dispose() => _interpreter?.close();
 }
-// [End of FaceNetService class]
 
-
-// --- CORRECTED STATE CLASS ---
-
+/// ----------------------
+/// Face Processing Screen
+/// ----------------------
 class FaceProcessingScreen extends StatefulWidget {
   final int maxCaptures;
   final CameraDescription camera;
@@ -82,12 +82,11 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   final List<List<double>> _capturedEmbeddings = [];
 
   bool _loading = true;
-  String _message = "Show your face to capture"; // Updated initial message
+  String _message = "Show your face to capture";
 
   CameraDescription? _currentCamera;
   List<CameraDescription>? _availableCameras;
 
-  // Flags to control processing
   bool _isProcessingStream = false;
   bool _isCapturing = false;
 
@@ -102,18 +101,15 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     await _facenet.loadModel();
 
     _availableCameras = await availableCameras();
-    
-    // --- DEFAULT TO FRONT CAMERA ---
+
+    // Select front camera if available
     try {
-      // Find the front camera
       _currentCamera = _availableCameras?.firstWhere(
         (cam) => cam.lensDirection == CameraLensDirection.front,
       );
     } catch (e) {
-      // If front camera not found, fallback to widget.camera or first available
       _currentCamera = widget.camera ?? _availableCameras?.first;
     }
-    // ----------------------------------------
 
     if (_currentCamera == null) {
       debugPrint("Error: No cameras available.");
@@ -126,26 +122,18 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21 // Request NV21
+          ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
-
-    // Start the image stream for live feedback
     await _cameraController!.startImageStream(_onImageStream);
-
     setState(() => _loading = false);
   }
 
-  // Handle image stream for live detection feedback
+  /// --- Manual Face Detection Stream (no auto capture) ---
   Future<void> _onImageStream(CameraImage image) async {
     if (_isProcessingStream || _isCapturing) return;
-    if (_capturedEmbeddings.length >= widget.maxCaptures) {
-      await _cameraController?.stopImageStream();
-      return;
-    }
-
     _isProcessingStream = true;
 
     try {
@@ -157,47 +145,32 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
 
       final faces = await _faceDetector.processImage(inputImage);
 
-      // --- AUTOMATIC CAPTURE ENABLED ---
-      if (faces.isNotEmpty && mounted && !_isCapturing) {
-        // Face detected!
-        setState(() {
-          _message = "✅ Face detected! Stand still...";
-        });
-        // Trigger the high-res capture
-        await _captureFace(); // This line is restored
-      } else if (mounted && !_isCapturing) {
-        // Update message to show "looking"
-        setState(() {
-          _message = "Show your face to capture";
-        });
+      if (faces.isNotEmpty && mounted) {
+        setState(() => _message = "✅ Face detected! Tap 'Capture Face'");
+      } else if (mounted) {
+        setState(() => _message = "Show your face to capture");
       }
-      // -------------------------------------------
-
     } catch (e) {
-      debugPrint("Error in image stream processing: $e");
+      debugPrint("Error in image stream: $e");
     } finally {
       _isProcessingStream = false;
     }
   }
 
-  // Helper to create InputImage from CameraImage
+  /// --- Create InputImage from Camera Frame ---
   InputImage? _createInputImageFromCameraImage(CameraImage image) {
     if (_cameraController == null) return null;
-    
-    // Tell ML Kit the format is NV21
-    final InputImageFormat format = Platform.isAndroid
-        ? InputImageFormat.nv21
-        : InputImageFormat.bgra8888;
 
-    // --- THIS IS THE FIX ---
-    // Check for the format we actually requested (nv21)
-    if (image.format.group != (Platform.isAndroid 
-          ? ImageFormatGroup.nv21 // <--- MUST MATCH WHAT WE REQUESTED
-          : ImageFormatGroup.bgra8888)) {
+    final format =
+        Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888;
+
+    if (image.format.group !=
+        (Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888)) {
       debugPrint("Unexpected image format ${image.format.group}");
       return null;
     }
-    // -----------------------
 
     final allBytes = WriteBuffer();
     for (final Plane plane in image.planes) {
@@ -206,22 +179,19 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     final bytes = allBytes.done().buffer.asUint8List();
 
     final rotation = _getInputImageRotation();
-
     final metadata = InputImageMetadata(
       size: Size(image.width.toDouble(), image.height.toDouble()),
       rotation: rotation,
-      format: format, // Use InputImageFormat.nv21
+      format: format,
       bytesPerRow: image.planes[0].bytesPerRow,
     );
 
     return InputImage.fromBytes(bytes: bytes, metadata: metadata);
   }
 
-  // Helper for rotation
   InputImageRotation _getInputImageRotation() {
-    final camera = _currentCamera!;
-    final sensorOrientation = camera.sensorOrientation;
-    switch (sensorOrientation) {
+    final orientation = _currentCamera!.sensorOrientation;
+    switch (orientation) {
       case 90:
         return InputImageRotation.rotation90deg;
       case 180:
@@ -233,17 +203,70 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     }
   }
 
+  /// --- Manual Capture when Button is Pressed ---
+  Future<void> _captureFace() async {
+    if (_capturedEmbeddings.length >= widget.maxCaptures) return;
+    if (_isCapturing) return;
+    if (_cameraController == null) return;
+
+    setState(() => _isCapturing = true);
+
+    try {
+      final picture = await _cameraController!.takePicture();
+      final file = File(picture.path);
+      final imageBytes = await file.readAsBytes();
+
+      final inputImage = InputImage.fromFilePath(picture.path);
+      final faces = await _faceDetector.processImage(inputImage);
+
+      if (faces.isNotEmpty) {
+        final face = faces.first;
+
+        final decoded = img.decodeImage(imageBytes)!;
+        final rect = face.boundingBox;
+
+        final faceCrop = img.copyCrop(
+          decoded,
+          x: rect.left.toInt().clamp(0, decoded.width - 1),
+          y: rect.top.toInt().clamp(0, decoded.height - 1),
+          width: rect.width.toInt().clamp(1, decoded.width),
+          height: rect.height.toInt().clamp(1, decoded.height),
+        );
+
+        final embedding = _facenet.getEmbedding(faceCrop);
+        if (embedding != null) {
+          _capturedEmbeddings.add(embedding);
+          setState(() {
+            _message =
+                "✅ Captured face (${_capturedEmbeddings.length}/${widget.maxCaptures})";
+          });
+
+          if (_capturedEmbeddings.length >= widget.maxCaptures) {
+            await _cameraController?.stopImageStream();
+            if (mounted) Navigator.pop(context, _capturedEmbeddings);
+          }
+        }
+      } else {
+        setState(() => _message = "⚠️ No face detected. Try again!");
+      }
+    } catch (e) {
+      debugPrint("Error capturing face: $e");
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (mounted) setState(() => _isCapturing = false);
+    }
+  }
+
+  /// --- Switch Front/Back Camera ---
   Future<void> _switchCamera() async {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
 
-    // Stop stream before disposing
     await _cameraController?.stopImageStream();
     await _cameraController?.dispose();
 
-    // Find the *other* camera
     _currentCamera = _availableCameras!.firstWhere(
       (cam) => cam.lensDirection != _currentCamera!.lensDirection,
-      orElse: () => _availableCameras!.first, // fallback
+      orElse: () => _availableCameras!.first,
     );
 
     _cameraController = CameraController(
@@ -251,82 +274,17 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21 // Also apply here
+          ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
-
-    // Restart the stream
     await _cameraController!.startImageStream(_onImageStream);
-
     setState(() {});
-  }
-
-  // This function is now called automatically OR by the button
-  Future<void> _captureFace() async {
-    if (_capturedEmbeddings.length >= widget.maxCaptures) return;
-    if (_isCapturing) return; // Prevent concurrent captures
-    if (_cameraController == null) return;
-
-    setState(() => _isCapturing = true);
-
-    try {
-      final cameraImage = await _cameraController!.takePicture();
-      final file = File(cameraImage.path);
-      final imageBytes = await file.readAsBytes();
-
-      final inputImage = InputImage.fromFilePath(cameraImage.path);
-      final faces = await _faceDetector.processImage(inputImage);
-
-      if (faces.isNotEmpty) {
-        final face = faces.first;
-
-        setState(() {
-          _message =
-              "✅ Captured face (${_capturedEmbeddings.length + 1}/${widget.maxCaptures})";
-        });
-
-        final decodedImage = img.decodeImage(imageBytes)!;
-        final rect = face.boundingBox;
-        final faceCrop = img.copyCrop(
-          decodedImage,
-          x: rect.left.toInt().clamp(0, decodedImage.width - 1),
-          y: rect.top.toInt().clamp(0, decodedImage.height - 1),
-          width: rect.width.toInt().clamp(1, decodedImage.width),
-          height: rect.height.toInt().clamp(1, decodedImage.height),
-        );
-
-        final embedding = _facenet.getEmbedding(faceCrop);
-        if (embedding != null) {
-          _capturedEmbeddings.add(embedding);
-          if (_capturedEmbeddings.length >= widget.maxCaptures) {
-            // Stop stream when done
-            await _cameraController?.stopImageStream();
-            if(mounted) {
-              Navigator.pop(context, _capturedEmbeddings);
-            }
-          }
-        }
-      } else {
-        setState(() {
-          _message = "⚠️ No face detected. Try again!";
-        });
-      }
-    } catch (e) {
-      debugPrint("Error capturing face: $e");
-    } finally {
-      if(mounted) {
-         // Add a small delay before allowing another auto-capture
-         await Future.delayed(const Duration(milliseconds: 500));
-         setState(() => _isCapturing = false); // Clear flag
-      }
-    }
   }
 
   @override
   void dispose() {
-    // Stop stream before disposing controller
     _cameraController?.stopImageStream();
     _cameraController?.dispose();
     _faceDetector.close();
@@ -334,6 +292,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     super.dispose();
   }
 
+  /// --- UI ---
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -341,7 +300,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.green)),
       );
     }
-    
+
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return const Scaffold(
         body: Center(child: Text("Error: Camera not initialized.")),
@@ -352,8 +311,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          CameraPreview(_cameraController!), // Camera preview
-          // Overlay message
+          CameraPreview(_cameraController!),
           Positioned(
             bottom: 120,
             left: 20,
@@ -375,8 +333,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
               ),
             ),
           ),
-
-          // Switch Camera Button
           Positioned(
             bottom: 50,
             right: 20,
@@ -390,7 +346,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _captureFace, // Button still works for manual capture
+        onPressed: _captureFace,
         label: const Text(
           "Capture Face",
           style: TextStyle(color: Colors.white),
