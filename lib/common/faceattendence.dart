@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
@@ -86,6 +85,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   // Registration captures
   final List<List<double>> _capturedEmbeddings = [];
 
+  // --- 💡 NEW: Employee list state variable ---
+  List<Data>? _currentEmployees;
+
   bool _loading = true;
   String _message = "Initializing...";
 
@@ -101,17 +103,20 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   final int _cameraRestartHours = 2; // restart camera every 2 hours
   final int _detectorRestartHours = 6; // recreate detector every 6 hours
   final double _matchingThreshold = 0.60; // cosine similarity threshold
+  // --- 💡 NEW: Employee refresh interval ---
+  final int _employeeRefreshHours = 1; // refresh employees every 1 hour
 
   // Timers and state
   Timer? _cameraRestartTimer;
   Timer? _detectorRestartTimer;
+  Timer? _employeeRefreshTimer; // 💡 NEW TIMER
   DateTime _lastFrameProcessed = DateTime.fromMillisecondsSinceEpoch(0);
 
   // Failure backoff
   int _consecutiveErrors = 0;
   final int _maxConsecutiveErrorsBeforeRestart = 5;
 
-  // --- 💡 NEW: Sleep/Wake State Variables ---
+  // --- Sleep/Wake State Variables ---
   bool _isDormant = false;
   DateTime _lastFaceDetectedTime = DateTime.now();
   final int _dormantFrameIntervalMs = 5000; // 5 seconds (when dormant)
@@ -123,12 +128,15 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentCamera = widget.camera;
-    _isAttendanceMode = widget.allEmployees != null && widget.controller != null;
+
+    // --- 💡 UPDATED: Use _currentEmployees for setup ---
+    _currentEmployees = widget.allEmployees;
+    _isAttendanceMode = _currentEmployees != null && widget.controller != null;
 
     _message = _isAttendanceMode
         ? "Show your face to capture"
         : "Show your face and tap capture (0/${widget.maxCaptures})";
-    
+
     // Initialize last detected time
     _lastFaceDetectedTime = DateTime.now();
 
@@ -213,9 +221,11 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     debugPrint("Camera initialized: ${_currentCamera!.name}");
   }
 
+  // --- 💡 UPDATED: Start all periodic tasks ---
   void _startPeriodicTasks() {
     _cameraRestartTimer?.cancel();
     _detectorRestartTimer?.cancel();
+    _employeeRefreshTimer?.cancel(); // 💡 CANCEL NEW TIMER
 
     _cameraRestartTimer =
         Timer.periodic(Duration(hours: _cameraRestartHours), (_) async {
@@ -228,6 +238,45 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       debugPrint("Periodic detector restart triggered");
       await _safeDetectorRestart();
     });
+
+    // --- 💡 NEW: Start employee refresh timer in attendance mode ---
+    if (_isAttendanceMode) {
+      _employeeRefreshTimer =
+          Timer.periodic(Duration(hours: _employeeRefreshHours), (_) {
+        debugPrint("Periodic employee refresh triggered");
+        _refreshEmployeeData();
+      });
+    }
+  }
+
+  // --- 💡 NEW: Function to refresh employee data ---
+  Future<void> _refreshEmployeeData() async {
+    if (widget.controller == null || !mounted || !_isAttendanceMode) return;
+
+    debugPrint("Hourly refresh: Fetching updated employee list...");
+    try {
+      // 1. Fetch the new master list from the repo
+      await widget.controller!.listtController();
+
+      // 2. Re-filter the list just like Dashboardscreen does
+      final newList = widget.controller!.employeelisttt
+          .where((e) =>
+              e.isActive == true &&
+              e.biometricEmpId != null &&
+              e.biometricEmpId!.isNotEmpty)
+          .toList();
+
+      // 3. Update the local state
+      if (mounted) {
+        setState(() {
+          _currentEmployees = newList;
+        });
+        debugPrint(
+            "✅ Employee list refreshed. New count: ${newList.length}");
+      }
+    } catch (e) {
+      debugPrint("Error refreshing employee list: $e");
+    }
   }
 
   Future<void> _safeCameraRestart() async {
@@ -287,7 +336,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     await _initCameraController();
   }
 
-  // --- 💡 UPDATED: Image stream handler (attendance only) ---
+  // --- UPDATED: Image stream handler (attendance only) ---
   Future<void> _onImageStream(CameraImage image) async {
     if (_isProcessingStream || _isCapturing) return;
 
@@ -409,95 +458,97 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // --- Attendance capture + match (high-res photo capture) ---
-Future<void> _captureAndMatchFace() async {
-  if (_isCapturing || _cameraController == null || !mounted) return;
-  setState(() => _isCapturing = true);
+  // --- 💡 UPDATED: Attendance capture + match (uses _currentEmployees) ---
+  Future<void> _captureAndMatchFace() async {
+    if (_isCapturing || _cameraController == null || !mounted) return;
+    setState(() => _isCapturing = true);
 
-  try {
-    final cameraImage = await _cameraController!.takePicture();
-    final file = File(cameraImage.path);
-    final imageBytes = await file.readAsBytes();
+    try {
+      final cameraImage = await _cameraController!.takePicture();
+      final file = File(cameraImage.path);
+      final imageBytes = await file.readAsBytes();
 
-    final inputImage = InputImage.fromFilePath(cameraImage.path);
-    final faces = await _faceDetector!.processImage(inputImage);
+      final inputImage = InputImage.fromFilePath(cameraImage.path);
+      final faces = await _faceDetector!.processImage(inputImage);
 
-    if (faces.isNotEmpty) {
-      final face = faces.first;
-      final decodedImage = img.decodeImage(imageBytes)!;
-      final rect = face.boundingBox;
+      if (faces.isNotEmpty) {
+        final face = faces.first;
+        final decodedImage = img.decodeImage(imageBytes)!;
+        final rect = face.boundingBox;
 
-      final left = rect.left.toInt().clamp(0, decodedImage.width - 1);
-      final top = rect.top.toInt().clamp(0, decodedImage.height - 1);
-      final width = rect.width.toInt().clamp(1, decodedImage.width - left);
-      final height = rect.height.toInt().clamp(1, decodedImage.height - top);
+        final left = rect.left.toInt().clamp(0, decodedImage.width - 1);
+        final top = rect.top.toInt().clamp(0, decodedImage.height - 1);
+        final width = rect.width.toInt().clamp(1, decodedImage.width - left);
+        final height = rect.height.toInt().clamp(1, decodedImage.height - top);
 
-      final faceCrop =
-          img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
-      final embedding = _facenet.getEmbedding(faceCrop);
+        final faceCrop =
+            img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
+        final embedding = _facenet.getEmbedding(faceCrop);
 
-      if (embedding != null && widget.allEmployees != null) {
-        Data? matchedEmployee;
-        double bestScore = -1.0;
+        // --- 💡 USE _currentEmployees instead of widget.allEmployees ---
+        if (embedding != null && _currentEmployees != null) {
+          Data? matchedEmployee;
+          double bestScore = -1.0;
 
-        for (final emp in widget.allEmployees!) {
-          final storedEmbeddings = emp.biometricEmpId!
-              .map<List<double>>(
-                  (e) => (e as List).map<double>((v) => v.toDouble()).toList())
-              .toList();
+          // --- 💡 USE _currentEmployees instead of widget.allEmployees ---
+          for (final emp in _currentEmployees!) {
+            final storedEmbeddings = emp.biometricEmpId!
+                .map<List<double>>(
+                    (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+                .toList();
 
-          for (var s in storedEmbeddings) {
-            final sim = _cosineSimilarity(embedding, s);
-            if (sim > bestScore) {
-              bestScore = sim;
-              matchedEmployee = emp;
+            for (var s in storedEmbeddings) {
+              final sim = _cosineSimilarity(embedding, s);
+              if (sim > bestScore) {
+                bestScore = sim;
+                matchedEmployee = emp;
+              }
             }
           }
-        }
 
-        if (matchedEmployee != null && bestScore >= _matchingThreshold) {
-          if (mounted) {
-            setState(() => _message = "✅ ${matchedEmployee?.name} Verified!");
+          if (matchedEmployee != null && bestScore >= _matchingThreshold) {
+            if (mounted) {
+              setState(() => _message = "✅ ${matchedEmployee?.name} Verified!");
+            }
+
+            try {
+              widget.controller?.verifyAttendance(
+                  embedding, matchedEmployee.employeeId.toString());
+            } catch (e) {
+              debugPrint("Controller verifyAttendance error: $e");
+            }
+
+            // ✅ Add delay after successful match
+            debugPrint("⏳ Waiting 3 seconds before next scan...");
+            await Future.delayed(const Duration(seconds: 3));
+
+          } else {
+            if (mounted) setState(() => _message = "⚠️ No Match Found. Try again.");
+            await Future.delayed(const Duration(seconds: 2));
           }
-
-          try {
-            widget.controller?.verifyAttendance(
-                embedding, matchedEmployee.employeeId.toString());
-          } catch (e) {
-            debugPrint("Controller verifyAttendance error: $e");
-          }
-
-          // ✅ Add delay after successful match
-          debugPrint("⏳ Waiting 10 seconds before next scan...");
-          await Future.delayed(const Duration(seconds: 3));
-
         } else {
-          if (mounted) setState(() => _message = "⚠️ No Match Found. Try again.");
-          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
+          await Future.delayed(const Duration(milliseconds: 500));
         }
       } else {
-        if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
+        if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
         await Future.delayed(const Duration(milliseconds: 500));
       }
-    } else {
-      if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
-  } catch (e) {
-    debugPrint("Error capturing face: $e");
-    if (mounted) setState(() => _message = "Error capturing face.");
-    await Future.delayed(const Duration(seconds: 1));
-  } finally {
-    if (mounted) {
-      setState(() {
-        // Reset message based on dormant state
-        _message =
-            _isDormant ? "Sleeping... (no face detected)" : "Show your face to capture";
-        _isCapturing = false;
-      });
+    } catch (e) {
+      debugPrint("Error capturing face: $e");
+      if (mounted) setState(() => _message = "Error capturing face.");
+      await Future.delayed(const Duration(seconds: 1));
+    } finally {
+      if (mounted) {
+        setState(() {
+          // Reset message based on dormant state
+          _message =
+              _isDormant ? "Sleeping... (no face detected)" : "Show your face to capture";
+          _isCapturing = false;
+        });
+      }
     }
   }
-}
 
   // --- Registration capture (manual) ---
   Future<void> _captureForRegistration() async {
@@ -553,23 +604,22 @@ Future<void> _captureAndMatchFace() async {
   }
 
   // Cosine similarity
-double _cosineSimilarity(List<double> a, List<double> b) {
-  if (a.length != b.length) {
-    debugPrint("⚠️ Embedding length mismatch: a=${a.length}, b=${b.length}");
-    return -1.0; // skip invalid comparisons
+  double _cosineSimilarity(List<double> a, List<double> b) {
+    if (a.length != b.length) {
+      debugPrint("⚠️ Embedding length mismatch: a=${a.length}, b=${b.length}");
+      return -1.0; // skip invalid comparisons
+    }
+
+    double dot = 0.0, normA = 0.0, normB = 0.0;
+    for (int i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    final denom = sqrt(normA) * sqrt(normB);
+    return denom == 0 ? -1.0 : dot / denom;
   }
-
-  double dot = 0.0, normA = 0.0, normB = 0.0;
-  for (int i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-
-  final denom = sqrt(normA) * sqrt(normB);
-  return denom == 0 ? -1.0 : dot / denom;
-}
-
 
   Future<void> _switchCamera() async {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
@@ -618,8 +668,10 @@ double _cosineSimilarity(List<double> a, List<double> b) {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
+    // --- 💡 CANCEL ALL TIMERS ---
     _cameraRestartTimer?.cancel();
     _detectorRestartTimer?.cancel();
+    _employeeRefreshTimer?.cancel(); // 💡 NEW
 
     try {
       _cameraController?.stopImageStream();

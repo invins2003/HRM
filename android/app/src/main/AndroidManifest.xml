@@ -5,7 +5,7 @@
 <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />    
     <application
-        android:label="erp_admin"
+        android:label="HRM LENS"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

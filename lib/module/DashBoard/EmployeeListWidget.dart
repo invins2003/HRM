@@ -48,7 +48,9 @@ class EmployeeListWidget extends StatelessWidget {
         // ✅ Summary Cards Row (kept same layout)
         Padding(
           padding: EdgeInsets.symmetric(
-              horizontal: 8.0 * scale, vertical: 8 * scale),
+            horizontal: 8.0 * scale,
+            vertical: 8 * scale,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -87,8 +89,7 @@ class EmployeeListWidget extends StatelessWidget {
           child: presentemployeelist.isEmpty
               ? _buildEmptyState(controller, fontScale, scale)
               : ListView.separated(
-                  padding:
-                      EdgeInsets.symmetric( vertical: 4),
+                  padding: EdgeInsets.symmetric(vertical: 4),
                   itemCount: presentemployeelist.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 1),
@@ -100,8 +101,7 @@ class EmployeeListWidget extends StatelessWidget {
                     return ListTile(
                       leading: CircleAvatar(
                         radius: 22 * scale,
-                        backgroundColor:
-                            isPresent ? Colors.green : Colors.red,
+                        backgroundColor: isPresent ? Colors.green : Colors.red,
                         child: Text(
                           (employee.employee?.name ?? "?")
                               .substring(0, 1)
@@ -119,12 +119,21 @@ class EmployeeListWidget extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      subtitle: Text(
-                        "ID: ${employee.employee?.employeeId ?? "N/A"} | Type: ${employee.employee?.employeeType ?? "N/A"}",
-                        style: TextStyle(
-                          fontSize: 13 * fontScale,
-                          color: Colors.black54,
-                        ),
+                      subtitle: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Shift: ${employee.shift?.title}",
+                            style: const TextStyle(color: Colors.green),
+                          ),
+                          Text(
+                            "ID: ${employee.employee?.employeeId ?? "N/A"} | Type: ${employee.employee?.employeeType ?? "N/A"}",
+                            style: TextStyle(
+                              fontSize: 13 * fontScale,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                       trailing: Text(
                         employee.status ?? "Absent",
@@ -144,20 +153,19 @@ class EmployeeListWidget extends StatelessWidget {
 
   /// ✅ Empty State (same look)
   Widget _buildEmptyState(
-      DashBoardEmployeeList controller, double fontScale, double scale) {
+    DashBoardEmployeeList controller,
+    double fontScale,
+    double scale,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline,
-              color: Colors.grey, size: 60 * scale),
+          Icon(Icons.people_outline, color: Colors.grey, size: 60 * scale),
           SizedBox(height: 10 * scale),
           Text(
             "No employees found",
-            style: TextStyle(
-              fontSize: 16 * fontScale,
-              color: Colors.black54,
-            ),
+            style: TextStyle(fontSize: 16 * fontScale, color: Colors.black54),
           ),
           SizedBox(height: 15 * scale),
           ElevatedButton.icon(
@@ -166,10 +174,7 @@ class EmployeeListWidget extends StatelessWidget {
               await controller.presentListtController(DateTime.now());
             },
             icon: Icon(Icons.refresh, size: 20 * scale),
-            label: Text(
-              "Retry",
-              style: TextStyle(fontSize: 14 * fontScale),
-            ),
+            label: Text("Retry", style: TextStyle(fontSize: 14 * fontScale)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
