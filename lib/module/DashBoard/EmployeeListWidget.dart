@@ -333,9 +333,19 @@ class EmployeeListWidget extends StatelessWidget {
                           ),
                         ),
                         title: Text(employee.employee?.name ?? "No Name"),
-                        subtitle: Text(
-                          "ID: ${employee.employee?.employeeId ?? "N/A"} | Type: ${employee.employee?.employeeType ?? "N/A"}",
-                          style: const TextStyle(color: Colors.black54),
+                        subtitle: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Shift: ${employee.shift?.title}",
+                              style: const TextStyle(color: Colors.green),
+                            ),
+                            Text(
+                              "ID: ${employee.employee?.employeeId ?? "N/A"} | Type: ${employee.employee?.employeeType ?? "N/A"}",
+                              style: const TextStyle(color: Colors.black54),
+                            ),
+                          ],
                         ),
                         trailing: Text(
                           employee.status ?? "Absent",
