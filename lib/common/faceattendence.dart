@@ -10,7 +10,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-// Your existing imports for controller & model
+// Your existing imports
 import 'package:erp_admin/module/DashBoard/Controller/EmployeeListController.dart';
 import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -59,10 +59,10 @@ class FaceNetService {
 
 /// Optimized FaceProcessingScreen
 class FaceProcessingScreen extends StatefulWidget {
-  final int maxCaptures; // For registration (e.g., 3)
+  final int maxCaptures;
   final CameraDescription camera;
-  final List<Data>? allEmployees; // OPTIONAL: For attendance mode
-  final DashBoardEmployeeList? controller; // OPTIONAL: For attendance mode
+  final List<Data>? allEmployees;
+  final DashBoardEmployeeList? controller;
 
   const FaceProcessingScreen({
     super.key,
@@ -85,7 +85,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   // Registration captures
   final List<List<double>> _capturedEmbeddings = [];
 
-  // --- 💡 NEW: Employee list state variable ---
   List<Data>? _currentEmployees;
 
   bool _loading = true;
@@ -98,19 +97,27 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   bool _isCapturing = false;
   bool _isAttendanceMode = false;
 
-  // --- Tuning constants (adjust to device)
-  final int _frameIntervalMs = 600; // process ~1.66 frames/sec
-  final int _cameraRestartHours = 2; // restart camera every 2 hours
-  final int _detectorRestartHours = 6; // recreate detector every 6 hours
-  final double _matchingThreshold = 0.70; // cosine similarity threshold
-  // --- 💡 NEW: Employee refresh interval ---
-  final int _employeeRefreshHours = 1; // refresh employees every 1 hour
+  // --- 💡 NEW: Safety Lock to prevent loops ---
+  bool _isRestarting = false;
 
-  // Timers and state
-  Timer? _cameraRestartTimer;
+  // --- Tuning constants
+  final int _frameIntervalMs = 600;
+  final double _matchingThreshold = 0.70;
+  final int _employeeRefreshHours = 1;
+
+  // --- 💡 REPLACED: Removed blind restart timer, added Watchdog ---
+  final int _watchdogIntervalSeconds = 30; // Check health every 30s
+  final int _maxFrameDelaySeconds =
+      10; // If no frame for 10s (and active), restart.
+
+  final int _detectorRestartHours = 6;
+
+  // Timers
+  Timer? _watchdogTimer; // 💡 NEW: Replaces camera restart timer
   Timer? _detectorRestartTimer;
-  Timer? _employeeRefreshTimer; // 💡 NEW TIMER
-  DateTime _lastFrameProcessed = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _employeeRefreshTimer;
+
+  DateTime _lastFrameProcessed = DateTime.now(); // Initialize to now
 
   // Failure backoff
   int _consecutiveErrors = 0;
@@ -119,9 +126,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   // --- Sleep/Wake State Variables ---
   bool _isDormant = false;
   DateTime _lastFaceDetectedTime = DateTime.now();
-  final int _dormantFrameIntervalMs = 5000; // 5 seconds (when dormant)
-  final int _activityTimeoutMinutes = 5; // 5 minutes (to enter dormant)
-  // --- End New Variables ---
+  final int _dormantFrameIntervalMs = 5000;
+  final int _activityTimeoutMinutes = 5;
 
   @override
   void initState() {
@@ -129,7 +135,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     WidgetsBinding.instance.addObserver(this);
     _currentCamera = widget.camera;
 
-    // --- 💡 UPDATED: Use _currentEmployees for setup ---
     _currentEmployees = widget.allEmployees;
     _isAttendanceMode = _currentEmployees != null && widget.controller != null;
 
@@ -137,7 +142,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         ? "Show your face to capture"
         : "Show your face and tap capture (0/${widget.maxCaptures})";
 
-    // Initialize last detected time
     _lastFaceDetectedTime = DateTime.now();
 
     _initializeAll();
@@ -147,17 +151,14 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     setState(() => _loading = true);
 
     try {
-      // Load model
       await _facenet.loadModel();
 
-      // Prevent screen sleep
       try {
         await WakelockPlus.enable();
       } catch (e) {
         debugPrint("Wakelock enable failed: $e");
       }
 
-      // Init camera list
       _availableCameras = await availableCameras();
 
       if (_currentCamera == null) {
@@ -166,11 +167,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         return;
       }
 
-      // Init detector and camera
       await _initFaceDetector();
       await _initCameraController();
 
-      // Start timers for periodic restarts
       _startPeriodicTasks();
     } catch (e, st) {
       debugPrint("Initialization error: $e\n$st");
@@ -178,6 +177,15 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Face _getClosestFace(List<Face> faces) {
+    faces.sort((a, b) {
+      final areaA = a.boundingBox.width * a.boundingBox.height;
+      final areaB = b.boundingBox.width * b.boundingBox.height;
+      return areaB.compareTo(areaA);
+    });
+    return faces.first;
   }
 
   Future<void> _initFaceDetector() async {
@@ -194,7 +202,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   }
 
   Future<void> _initCameraController() async {
-    // Dispose old controller if present
+    // 💡 Lock restarts during init
+    if (_isRestarting) return;
+
     try {
       await _cameraController?.stopImageStream();
     } catch (_) {}
@@ -204,7 +214,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
     _cameraController = CameraController(
       _currentCamera!,
-      ResolutionPreset.medium, // low for continuous stream
+      ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
           ? ImageFormatGroup.nv21
@@ -213,7 +223,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
     await _cameraController!.initialize();
 
-    // Start stream only in attendance mode
+    // Reset frame timer on successful init
+    _lastFrameProcessed = DateTime.now();
+
     if (_isAttendanceMode) {
       await _cameraController!.startImageStream(_onImageStream);
     }
@@ -221,90 +233,123 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     debugPrint("Camera initialized: ${_currentCamera!.name}");
   }
 
-  // --- 💡 UPDATED: Start all periodic tasks ---
   void _startPeriodicTasks() {
-    _cameraRestartTimer?.cancel();
+    _watchdogTimer?.cancel(); // 💡 Cancel old
     _detectorRestartTimer?.cancel();
-    _employeeRefreshTimer?.cancel(); // 💡 CANCEL NEW TIMER
+    _employeeRefreshTimer?.cancel();
 
-    _cameraRestartTimer =
-        Timer.periodic(Duration(hours: _cameraRestartHours), (_) async {
-      debugPrint("Periodic camera restart triggered");
-      await _safeCameraRestart();
+    // 💡 NEW: Watchdog Timer
+    // Instead of blindly restarting every 2 hours, we check if the camera is actually frozen.
+    _watchdogTimer = Timer.periodic(Duration(seconds: _watchdogIntervalSeconds), (
+      _,
+    ) async {
+      if (_isRestarting || !_isAttendanceMode) return;
+
+      final secondsSinceLastFrame = DateTime.now()
+          .difference(_lastFrameProcessed)
+          .inSeconds;
+
+      // If we are NOT dormant, but haven't seen a frame in 10+ seconds, the camera is likely dead.
+      if (!_isDormant && secondsSinceLastFrame > _maxFrameDelaySeconds) {
+        debugPrint(
+          "🚨 Watchdog: No frames for $secondsSinceLastFrame s. Restarting Camera...",
+        );
+        await _safeCameraRestart();
+      }
     });
 
-    _detectorRestartTimer =
-        Timer.periodic(Duration(hours: _detectorRestartHours), (_) async {
-      debugPrint("Periodic detector restart triggered");
-      await _safeDetectorRestart();
-    });
+    // Detector restart is fine (pure software, no hardware driver issues)
+    _detectorRestartTimer = Timer.periodic(
+      Duration(hours: _detectorRestartHours),
+      (_) async {
+        debugPrint("Periodic detector restart triggered");
+        await _safeDetectorRestart();
+      },
+    );
 
-    // --- 💡 NEW: Start employee refresh timer in attendance mode ---
     if (_isAttendanceMode) {
-      _employeeRefreshTimer =
-          Timer.periodic(Duration(hours: _employeeRefreshHours), (_) {
-        debugPrint("Periodic employee refresh triggered");
-        _refreshEmployeeData();
-      });
+      _employeeRefreshTimer = Timer.periodic(
+        Duration(hours: _employeeRefreshHours),
+        (_) {
+          debugPrint("Periodic employee refresh triggered");
+          _refreshEmployeeData();
+        },
+      );
     }
   }
 
-  // --- 💡 NEW: Function to refresh employee data ---
   Future<void> _refreshEmployeeData() async {
     if (widget.controller == null || !mounted || !_isAttendanceMode) return;
-
-    debugPrint("Hourly refresh: Fetching updated employee list...");
     try {
-      // 1. Fetch the new master list from the repo
       await widget.controller!.listtController();
-
-      // 2. Re-filter the list just like Dashboardscreen does
       final newList = widget.controller!.employeelisttt
-          .where((e) =>
-              e.isActive == true &&
-              e.biometricEmpId != null &&
-              e.biometricEmpId!.isNotEmpty)
+          .where(
+            (e) =>
+                e.isActive == true &&
+                e.biometricEmpId != null &&
+                e.biometricEmpId!.isNotEmpty,
+          )
           .toList();
-
-      // 3. Update the local state
       if (mounted) {
         setState(() {
           _currentEmployees = newList;
         });
-        debugPrint(
-            "✅ Employee list refreshed. New count: ${newList.length}");
+        debugPrint("✅ Employee list refreshed.");
       }
     } catch (e) {
       debugPrint("Error refreshing employee list: $e");
     }
   }
 
+  // --- 💡 OPTIMIZED: Restart Logic with Locks ---
   Future<void> _safeCameraRestart() async {
-    if (!mounted) return;
+    if (!mounted || _isRestarting) return; // Prevent double triggers
+
+    // Set lock to stop _onImageStream immediately
+    _isRestarting = true;
+
+    if (mounted) setState(() => _message = "Refreshing Camera...");
+
     try {
-      if (_isAttendanceMode) {
-        await _cameraController?.stopImageStream();
+      if (_isAttendanceMode && _cameraController != null) {
+        try {
+          await _cameraController?.stopImageStream();
+        } catch (e) {
+          debugPrint("Stop stream warning: $e");
+        }
       }
-      await _cameraController?.dispose();
+
+      await Future.delayed(
+        const Duration(milliseconds: 200),
+      ); // Give stream time to halt
+
+      try {
+        await _cameraController?.dispose();
+      } catch (e) {
+        debugPrint("Dispose warning: $e");
+      }
+      _cameraController = null; // Clear reference
     } catch (e) {
       debugPrint("Error stopping camera before restart: $e");
     }
 
-    // small pause
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Extended cooling off period for hardware
+    await Future.delayed(const Duration(seconds: 2));
 
-    // Re-create controller
     try {
       await _initCameraController();
-      _consecutiveErrors = 0; // reset
-      if (mounted) setState(() => _message = "Camera restarted");
+      _consecutiveErrors = 0;
+      // Note: _isRestarting is effectively reset because _initCameraController sets up the stream
+      if (mounted)
+        setState(() => _message = _isDormant ? "Sleeping..." : "Camera Ready");
     } catch (e) {
       debugPrint("Camera restart failed: $e");
       _consecutiveErrors++;
       if (_consecutiveErrors >= _maxConsecutiveErrorsBeforeRestart) {
-        // escalate: recreate everything
         await _recreateAll();
       }
+    } finally {
+      _isRestarting = false; // Release lock
     }
   }
 
@@ -321,7 +366,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   }
 
   Future<void> _recreateAll() async {
-    debugPrint("Recreating camera & detector due to repeated errors.");
+    if (_isRestarting) return;
+    _isRestarting = true;
+
+    debugPrint("Recreating everything due to repeated errors.");
     try {
       await _cameraController?.stopImageStream();
     } catch (_) {}
@@ -331,72 +379,56 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     try {
       await _faceDetector?.close();
     } catch (_) {}
-    await Future.delayed(const Duration(seconds: 1));
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    _isRestarting = false; // Unlock before init
     await _initFaceDetector();
     await _initCameraController();
   }
 
-  // --- ⚠️ UPDATED: Image stream handler (attendance only) ---
   Future<void> _onImageStream(CameraImage image) async {
-    if (_isProcessingStream || _isCapturing) return;
+    // --- 💡 CRITICAL FIX: Abort if restarting or disposed ---
+    if (_isRestarting || _isProcessingStream || _isCapturing) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized)
+      return;
 
-    // --- NEW: DYNAMIC THROTTLE ---
     final now = DateTime.now();
-    // Use dormant interval if sleeping, otherwise use normal interval
-    final int currentInterval =
-        _isDormant ? _dormantFrameIntervalMs : _frameIntervalMs;
+    final int currentInterval = _isDormant
+        ? _dormantFrameIntervalMs
+        : _frameIntervalMs;
 
     if (now.difference(_lastFrameProcessed).inMilliseconds < currentInterval) {
-      return; // Throttled
+      return;
     }
-    _lastFrameProcessed = now;
-    // --- END NEW: DYNAMIC THROTTLE ---
+    _lastFrameProcessed = now; // Watchdog uses this timestamp
 
     _isProcessingStream = true;
     try {
-      if (_cameraController == null || _faceDetector == null) return;
+      // 💡 Double check controller inside try block
+      if (_cameraController == null) return;
 
       final inputImage = _createInputImageFromCameraImage(image);
-      if (inputImage == null) {
-        return;
-      }
+      if (inputImage == null) return;
 
       final faces = await _faceDetector!.processImage(inputImage);
 
-      // --- 💡 MODIFIED: Check for exactly ONE face ---
-      if (faces.length == 1 && mounted) {
-        // --- ONE FACE DETECTED ---
-        _lastFaceDetectedTime = DateTime.now(); // Update activity timer
+      if (faces.isNotEmpty && mounted) {
+        _lastFaceDetectedTime = DateTime.now();
 
         if (_isDormant) {
-          // --- WAKE UP ---
-          debugPrint("Waking up from dormant state!");
-          if (mounted) setState(() => _isDormant = false);
+          setState(() => _isDormant = false);
         }
 
-        // Proceed with capture ONLY if not already capturing
         if (!_isCapturing) {
-          if (mounted) setState(() => _message = "✅ Face detected! Verifying...");
+          setState(() => _message = "✅ Face detected! Verifying...");
           await _captureAndMatchFace();
         }
-      } 
-      // --- 💡 NEW: Check for MULTIPLE faces ---
-      else if (faces.length > 1 && mounted && !_isCapturing) {
-        // --- MULTIPLE FACES DETECTED ---
-         _lastFaceDetectedTime = DateTime.now(); // Still activity
-         if (_isDormant) { // Wake up if sleeping
-           if(mounted) setState(() => _isDormant = false);
-         }
-         if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
-      }
-      // --- This "else if" now implies faces.isEmpty ---
-      else if (mounted && !_isCapturing) { 
-        // --- NO FACE DETECTED ---
+      } else if (mounted && !_isCapturing) {
         if (_isDormant) {
-          // Already dormant, just ensure message is correct
-          if (mounted) setState(() => _message = "Sleeping... (no face detected)");
+          if (mounted)
+            setState(() => _message = "Sleeping... (no face detected)");
         } else {
-          // --- CHECK IF WE SHOULD GO TO SLEEP ---
           if (DateTime.now().difference(_lastFaceDetectedTime).inMinutes >=
               _activityTimeoutMinutes) {
             debugPrint("Entering dormant state due to inactivity.");
@@ -407,23 +439,20 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
               });
             }
           } else {
-            // Not dormant, and not time to sleep yet
             if (mounted) setState(() => _message = "Show your face to capture");
           }
         }
       }
     } catch (e) {
       debugPrint("Stream processing error: $e");
-      _consecutiveErrors++;
-      if (_consecutiveErrors >= _maxConsecutiveErrorsBeforeRestart) {
-        await _recreateAll();
-        _consecutiveErrors = 0;
-      }
+
+      // 💡 Do not trigger restart immediately on a single frame error
+      // Let the Watchdog handle it if frames actually stop coming.
+      // This prevents the infinite loop.
     } finally {
       _isProcessingStream = false;
     }
   }
-  // --- End Updated Method ---
 
   InputImage? _createInputImageFromCameraImage(CameraImage image) {
     if (_cameraController == null) return null;
@@ -433,8 +462,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         : InputImageFormat.bgra8888;
 
     if (image.format.group !=
-        (Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888)) {
-      debugPrint("Unexpected image format ${image.format.group}");
+        (Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888)) {
       return null;
     }
 
@@ -456,8 +486,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   }
 
   InputImageRotation _getInputImageRotation() {
-    final camera = _currentCamera!;
-    final sensorOrientation = camera.sensorOrientation;
+    if (_currentCamera == null) return InputImageRotation.rotation0deg;
+    final sensorOrientation = _currentCamera!.sensorOrientation;
     switch (sensorOrientation) {
       case 90:
         return InputImageRotation.rotation90deg;
@@ -470,9 +500,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // --- ⚠️ UPDATED: Attendance capture + match (uses _currentEmployees) ---
   Future<void> _captureAndMatchFace() async {
-    if (_isCapturing || _cameraController == null || !mounted) return;
+    if (_isCapturing || _cameraController == null || !mounted || _isRestarting)
+      return;
     setState(() => _isCapturing = true);
 
     try {
@@ -483,9 +513,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       final inputImage = InputImage.fromFilePath(cameraImage.path);
       final faces = await _faceDetector!.processImage(inputImage);
 
-      // --- 💡 MODIFIED: Check for exactly ONE face ---
-      if (faces.length == 1) {
-        final face = faces.first;
+      if (faces.isNotEmpty) {
+        final face = _getClosestFace(faces);
         final decodedImage = img.decodeImage(imageBytes)!;
         final rect = face.boundingBox;
 
@@ -494,20 +523,24 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         final width = rect.width.toInt().clamp(1, decodedImage.width - left);
         final height = rect.height.toInt().clamp(1, decodedImage.height - top);
 
-        final faceCrop =
-            img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
+        final faceCrop = img.copyCrop(
+          decodedImage,
+          x: left,
+          y: top,
+          width: width,
+          height: height,
+        );
         final embedding = _facenet.getEmbedding(faceCrop);
 
-        // --- 💡 USE _currentEmployees instead of widget.allEmployees ---
         if (embedding != null && _currentEmployees != null) {
           Data? matchedEmployee;
           double bestScore = -1.0;
 
-          // --- 💡 USE _currentEmployees instead of widget.allEmployees ---
           for (final emp in _currentEmployees!) {
             final storedEmbeddings = emp.biometricEmpId!
                 .map<List<double>>(
-                    (e) => (e as List).map<double>((v) => v.toDouble()).toList())
+                  (e) => (e as List).map<double>((v) => v.toDouble()).toList(),
+                )
                 .toList();
 
             for (var s in storedEmbeddings) {
@@ -526,32 +559,26 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
             try {
               widget.controller?.verifyAttendance(
-                  embedding, matchedEmployee.employeeId.toString());
+                embedding,
+                matchedEmployee.employeeId.toString(),
+              );
             } catch (e) {
               debugPrint("Controller verifyAttendance error: $e");
             }
-
-            // ✅ Add delay after successful match
-            debugPrint("⏳ Waiting 3 seconds before next scan...");
             await Future.delayed(const Duration(seconds: 3));
-
           } else {
-            if (mounted) setState(() => _message = "⚠️ No Match Found. Try again.");
+            if (mounted)
+              setState(() => _message = "⚠️ No Match Found. Try again.");
             await Future.delayed(const Duration(seconds: 2));
           }
         } else {
-          if (mounted) setState(() => _message = "⚠️ No face detected or model error.");
+          if (mounted)
+            setState(() => _message = "⚠️ No face detected or model error.");
           await Future.delayed(const Duration(milliseconds: 500));
         }
-      } 
-      // --- 💡 NEW: Handle multiple faces ---
-      else if (faces.length > 1) {
-         if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
-         await Future.delayed(const Duration(seconds: 2));
-      }
-      // --- This "else" now means faces.isEmpty ---
-      else {
-        if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
+      }  else {
+        if (mounted)
+          setState(() => _message = "⚠️ No face detected. Try again!");
         await Future.delayed(const Duration(milliseconds: 500));
       }
     } catch (e) {
@@ -561,18 +588,19 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     } finally {
       if (mounted) {
         setState(() {
-          // Reset message based on dormant state
-          _message =
-              _isDormant ? "Sleeping... (no face detected)" : "Show your face to capture";
+          _message = _isDormant
+              ? "Sleeping... (no face detected)"
+              : "Show your face to capture";
           _isCapturing = false;
         });
       }
     }
   }
 
-  // --- ⚠️ UPDATED: Registration capture (manual) ---
   Future<void> _captureForRegistration() async {
-    if (_isCapturing || _cameraController == null || !mounted) return;
+    // Check restarting flag
+    if (_isCapturing || _cameraController == null || !mounted || _isRestarting)
+      return;
     setState(() => _isCapturing = true);
 
     try {
@@ -583,9 +611,9 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       final inputImage = InputImage.fromFilePath(cameraImage.path);
       final faces = await _faceDetector!.processImage(inputImage);
 
-      // --- 💡 MODIFIED: Check for exactly ONE face ---
-      if (faces.length == 1) {
-        final face = faces.first;
+      if (faces.isNotEmpty) {
+        final face = _getClosestFace(faces);
+
         final decodedImage = img.decodeImage(imageBytes)!;
         final rect = face.boundingBox;
         final left = rect.left.toInt().clamp(0, decodedImage.width - 1);
@@ -593,8 +621,13 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         final width = rect.width.toInt().clamp(1, decodedImage.width - left);
         final height = rect.height.toInt().clamp(1, decodedImage.height - top);
 
-        final faceCrop =
-            img.copyCrop(decodedImage, x: left, y: top, width: width, height: height);
+        final faceCrop = img.copyCrop(
+          decodedImage,
+          x: left,
+          y: top,
+          width: width,
+          height: height,
+        );
         final embedding = _facenet.getEmbedding(faceCrop);
 
         if (embedding != null) {
@@ -603,28 +636,27 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
           if (remaining > 0) {
             if (mounted) {
-              setState(() => _message =
-                "✅ Captured face (${_capturedEmbeddings.length}/${widget.maxCaptures})");
+              setState(
+                () => _message =
+                    "✅ Captured face (${_capturedEmbeddings.length}/${widget.maxCaptures})",
+              );
             }
           } else {
             if (mounted) {
               setState(
-                () => _message = "✅ All ${widget.maxCaptures} faces captured!");
+                () => _message = "✅ All ${widget.maxCaptures} faces captured!",
+              );
             }
             await Future.delayed(const Duration(seconds: 1));
             if (mounted) Navigator.pop(context, _capturedEmbeddings);
           }
         } else {
-          if (mounted) setState(() => _message = "Error generating embedding. Try again.");
+          if (mounted)
+            setState(() => _message = "Error generating embedding. Try again.");
         }
-      } 
-      // --- 💡 NEW: Handle multiple faces ---
-      else if (faces.length > 1) {
-        if (mounted) setState(() => _message = "⚠️ Too many faces! Show only one.");
-      }
-      // --- This "else" now means faces.isEmpty ---
-      else {
-        if (mounted) setState(() => _message = "⚠️ No face detected. Try again!");
+      }  else {
+        if (mounted)
+          setState(() => _message = "⚠️ No face detected. Try again!");
       }
     } catch (e) {
       debugPrint("Registration capture error: $e");
@@ -634,26 +666,21 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // Cosine similarity
   double _cosineSimilarity(List<double> a, List<double> b) {
-    if (a.length != b.length) {
-      debugPrint("⚠️ Embedding length mismatch: a=${a.length}, b=${b.length}");
-      return -1.0; // skip invalid comparisons
-    }
-
+    if (a.length != b.length) return -1.0;
     double dot = 0.0, normA = 0.0, normB = 0.0;
     for (int i = 0; i < a.length; i++) {
       dot += a[i] * b[i];
       normA += a[i] * a[i];
       normB += b[i] * b[i];
     }
-
     final denom = sqrt(normA) * sqrt(normB);
     return denom == 0 ? -1.0 : dot / denom;
   }
 
   Future<void> _switchCamera() async {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
+    if (_isRestarting) return; // Prevent switch during restart
 
     try {
       if (_isAttendanceMode) await _cameraController?.stopImageStream();
@@ -673,11 +700,12 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // Pause/resume camera appropriately to avoid resource leaks
     if (!mounted) return;
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    // Don't interfere if we are in the middle of a controlled restart
+    if (_isRestarting) return;
 
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       try {
         await _cameraController?.stopImageStream();
         await _cameraController?.dispose();
@@ -685,13 +713,12 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
         debugPrint("Lifecycle pause stop error: $e");
       }
     } else if (state == AppLifecycleState.resumed) {
-      // Reinitialize camera & detector on resume
       await Future.delayed(const Duration(milliseconds: 300));
       await _initFaceDetector();
       await _initCameraController();
-      // Reset last face detected time on resume
       _lastFaceDetectedTime = DateTime.now();
-      if(mounted) setState(() => _isDormant = false);
+      _lastFrameProcessed = DateTime.now(); // Reset watchdog
+      if (mounted) setState(() => _isDormant = false);
     }
   }
 
@@ -699,10 +726,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
-    // --- 💡 CANCEL ALL TIMERS ---
-    _cameraRestartTimer?.cancel();
+    // Cancel all timers
+    _watchdogTimer?.cancel();
     _detectorRestartTimer?.cancel();
-    _employeeRefreshTimer?.cancel(); // 💡 NEW
+    _employeeRefreshTimer?.cancel();
 
     try {
       _cameraController?.stopImageStream();
@@ -731,6 +758,18 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
 
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      // If we are restarting, show a specific message instead of error
+      if (_isRestarting) {
+        return const Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(
+            child: Text(
+              "Refreshing Camera System...",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
       return const Scaffold(
         body: Center(child: Text("Error: Camera not initialized.")),
       );
@@ -748,12 +787,11 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                // --- 💡 NEW: Show red color for "too many faces" warning ---
                 color: _message.contains("Too many faces")
                     ? Colors.red.withOpacity(0.8)
                     : _isDormant
-                        ? Colors.blueGrey.withOpacity(0.8)
-                        : Colors.green.withOpacity(0.8),
+                    ? Colors.blueGrey.withOpacity(0.8)
+                    : Colors.green.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -794,8 +832,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
           ? null
           : FloatingActionButton.extended(
               onPressed: _captureForRegistration,
-              label: const Text("Capture Face",
-                  style: TextStyle(color: Colors.white)),
+              label: const Text(
+                "Capture Face",
+                style: TextStyle(color: Colors.white),
+              ),
               icon: const Icon(Icons.camera_alt, color: Colors.white),
               backgroundColor: Colors.green,
             ),

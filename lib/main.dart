@@ -4,6 +4,7 @@ import 'package:erp_admin/theme/themes.dart';
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,7 +28,7 @@ void main() async {
   ]);
 
   await dep.init();
-  runApp(const MyApp());
+ runApp(Phoenix(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

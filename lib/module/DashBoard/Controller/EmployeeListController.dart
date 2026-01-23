@@ -122,16 +122,16 @@ class DashBoardEmployeeList extends GetxController {
         Get.snackbar(
           "Check-in Failed",
           "${response.body["message"]}",
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Colors.green,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (e) {
       Get.snackbar(
-        "Error",
-        "Attendance verification failed: $e",
-        backgroundColor: Colors.redAccent,
+        "Attention",
+        "$e",
+        backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
