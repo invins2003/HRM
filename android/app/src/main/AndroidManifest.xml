@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
 <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />    
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />    
     <application
         android:label="HRM LENS"
         android:name="${applicationName}"
@@ -35,6 +36,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

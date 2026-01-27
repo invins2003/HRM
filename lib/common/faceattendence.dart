@@ -5,9 +5,11 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:image/image.dart' as img;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:camera/camera.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 // Your existing imports
@@ -99,6 +101,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
   // --- 💡 NEW: Safety Lock to prevent loops ---
   bool _isRestarting = false;
+  int _restartAttempts = 0; 
 
   // --- Tuning constants
   final int _frameIntervalMs = 600;
@@ -107,8 +110,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
   // --- 💡 REPLACED: Removed blind restart timer, added Watchdog ---
   final int _watchdogIntervalSeconds = 30; // Check health every 30s
-  final int _maxFrameDelaySeconds =
-      10; // If no frame for 10s (and active), restart.
+  final int _maxFrameDelaySeconds = 10; // If no frame for 10s (and active), restart.
 
   final int _detectorRestartHours = 6;
 
@@ -203,7 +205,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
 
   Future<void> _initCameraController() async {
     // 💡 Lock restarts during init
-    if (_isRestarting) return;
+    if (_isRestarting && _restartAttempts == 0) return;
 
     try {
       await _cameraController?.stopImageStream();
@@ -239,7 +241,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     _employeeRefreshTimer?.cancel();
 
     // 💡 NEW: Watchdog Timer
-    // Instead of blindly restarting every 2 hours, we check if the camera is actually frozen.
     _watchdogTimer = Timer.periodic(Duration(seconds: _watchdogIntervalSeconds), (
       _,
     ) async {
@@ -301,57 +302,48 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
   }
 
-  // --- 💡 OPTIMIZED: Restart Logic with Locks ---
-  Future<void> _safeCameraRestart() async {
-    if (!mounted || _isRestarting) return; // Prevent double triggers
 
-    // Set lock to stop _onImageStream immediately
-    _isRestarting = true;
+Future<void> _safeCameraRestart() async {
+  if (!mounted || _isRestarting) return;
+  _isRestarting = true;
+  _restartAttempts++;
 
-    if (mounted) setState(() => _message = "Refreshing Camera...");
+  if (mounted) setState(() => _message = "System Refreshing... (Attempt $_restartAttempts)");
 
-    try {
-      if (_isAttendanceMode && _cameraController != null) {
-        try {
-          await _cameraController?.stopImageStream();
-        } catch (e) {
-          debugPrint("Stop stream warning: $e");
-        }
-      }
+  try {
+    // 1. Force stop and nullify
+    await _cameraController?.stopImageStream().catchError((e) => debugPrint(e.toString()));
+    await _cameraController?.dispose();
+    _cameraController = null; 
+    
+    // 2. Longer hardware cooling period
+    await Future.delayed(const Duration(seconds: 3));
 
-      await Future.delayed(
-        const Duration(milliseconds: 200),
-      ); // Give stream time to halt
-
-      try {
-        await _cameraController?.dispose();
-      } catch (e) {
-        debugPrint("Dispose warning: $e");
-      }
-      _cameraController = null; // Clear reference
-    } catch (e) {
-      debugPrint("Error stopping camera before restart: $e");
+    // 3. Re-init
+    await _initCameraController();
+    
+    _restartAttempts = 0; // Reset counter on success
+    _consecutiveErrors = 0;
+  } catch (e) {
+    debugPrint("Restart Attempt $_restartAttempts failed: $e");
+    
+    // 4. THE NUCLEAR OPTION: If 2 soft restarts fail, trigger Phoenix
+    if (_restartAttempts >= 2) {
+       _triggerAppRelaunch();
     }
-
-    // Extended cooling off period for hardware
-    await Future.delayed(const Duration(seconds: 2));
-
-    try {
-      await _initCameraController();
-      _consecutiveErrors = 0;
-      // Note: _isRestarting is effectively reset because _initCameraController sets up the stream
-      if (mounted)
-        setState(() => _message = _isDormant ? "Sleeping..." : "Camera Ready");
-    } catch (e) {
-      debugPrint("Camera restart failed: $e");
-      _consecutiveErrors++;
-      if (_consecutiveErrors >= _maxConsecutiveErrorsBeforeRestart) {
-        await _recreateAll();
-      }
-    } finally {
-      _isRestarting = false; // Release lock
-    }
+  } finally {
+    _isRestarting = false;
   }
+}
+
+Future<void> _triggerAppRelaunch() async {
+  // 1. Save that we were on the camera page
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('should_auto_resume_camera', true);
+
+  // 2. Relaunch the entire Flutter engine
+  Phoenix.rebirth(context);
+}
 
   Future<void> _safeDetectorRestart() async {
     if (!mounted) return;
@@ -401,11 +393,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     if (now.difference(_lastFrameProcessed).inMilliseconds < currentInterval) {
       return;
     }
-    _lastFrameProcessed = now; // Watchdog uses this timestamp
+    _lastFrameProcessed = now; // 💡 WATCHDOG SYNC: Update timestamp on every frame
 
     _isProcessingStream = true;
     try {
-      // 💡 Double check controller inside try block
       if (_cameraController == null) return;
 
       final inputImage = _createInputImageFromCameraImage(image);
@@ -445,10 +436,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
       }
     } catch (e) {
       debugPrint("Stream processing error: $e");
-
-      // 💡 Do not trigger restart immediately on a single frame error
-      // Let the Watchdog handle it if frames actually stop coming.
-      // This prevents the infinite loop.
     } finally {
       _isProcessingStream = false;
     }
@@ -758,20 +745,22 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen>
     }
 
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      // If we are restarting, show a specific message instead of error
-      if (_isRestarting) {
-        return const Scaffold(
-          backgroundColor: Colors.black,
-          body: Center(
-            child: Text(
-              "Refreshing Camera System...",
-              style: TextStyle(color: Colors.white),
-            ),
+      // 💡 RECOVERY UI: Show a clean spinner during restarts
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: Colors.green),
+              const SizedBox(height: 20),
+              Text(
+                _isRestarting ? "Refreshing Camera System..." : "Starting...",
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
           ),
-        );
-      }
-      return const Scaffold(
-        body: Center(child: Text("Error: Camera not initialized.")),
+        ),
       );
     }
 

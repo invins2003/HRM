@@ -4,6 +4,7 @@ import 'package:erp_admin/module/DashBoard/Model/EmployeesLIstModel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Controller/EmployeeListController.dart';
 import '../EmployeeListWidget.dart';
 
@@ -28,6 +29,25 @@ class _DashboardscreenState extends State<Dashboardscreen> {
       await controller.listtController();
       await controller.presentListtController(selectedDate);
     });
+    _checkForAutoResume();
+  }
+
+
+
+  Future<void> _checkForAutoResume() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool shouldResume = prefs.getBool('should_auto_resume_camera') ?? false;
+
+    if (shouldResume) {
+      // 1. Immediately clear the flag so we don't get stuck in a loop
+      await prefs.setBool('should_auto_resume_camera', false);
+
+      // 2. Small delay to ensure the controller and camera list are ready
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 3. Trigger the attendance logic automatically
+      _handleAutoAttendance(context);
+    }
   }
 
   @override
