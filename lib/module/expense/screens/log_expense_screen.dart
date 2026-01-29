@@ -54,180 +54,184 @@ class _LogExpenseScreenState extends State<LogExpenseScreen> {
   }
   //Botoom Sheet   ---->>>> ........................................
 
-    File? selectedDocument; //filess
-    bool isPDF = false;
-    ImageProvider? displayImage;
+  File? selectedDocument; //filess
+  bool isPDF = false;
+  ImageProvider? displayImage;
 
-    final ImagePicker _picer = ImagePicker();
+  final ImagePicker _picer = ImagePicker();
 
-    void _openBottomSheet() {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          File? tempDocument = selectedDocument; // temporary variable
+  void _openBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        File? tempDocument = selectedDocument; // temporary variable
 
-          return StatefulBuilder(
-            builder: (context, setStateSheet) {
-              return Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Pick File", style: TextStyle(fontSize: 18)),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
+        return StatefulBuilder(
+          builder: (context, setStateSheet) {
+            return Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Pick File", style: TextStyle(fontSize: 18)),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Updated Dotted Border
+                  // Updated Dotted Border
+                  DottedBorder(
+                    options: RoundedRectDottedBorderOptions(
+                      radius: BorderType.Radius.circular(10), // Your radius
+                      dashPattern: const [6, 3],
+                      color: Colors.grey,
+                      strokeWidth: 2,
                     ),
-                    const SizedBox(height: 10),
-
-                    // Updated Dotted Border
-                    // Updated Dotted Border
-              DottedBorder(
-                options: RoundedRectDottedBorderOptions(
-                  radius: BorderType.Radius.circular(10), // Your radius
-                  dashPattern: const [6, 3],
-                  color: Colors.grey,
-                  strokeWidth: 2,
-                ),
-                child: ClipRRect( // <-- ADD THIS WIDGET
-                  borderRadius: BorderRadius.circular(10), // <-- MATCH THE RADIUS
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    alignment: Alignment.center,
-                    child: tempDocument == null
-                        ? const Text("No Preview Available")
-                        : Stack(
-                            children: [
-                              Center(
-                                child: tempDocument!.path.endsWith(".pdf")
-                                    ? const Icon(
-                                        Icons.picture_as_pdf,
-                                        color: Colors.red,
-                                        size: 50,
-                                      )
-                                    : Image.file(
-                                        tempDocument!,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: 200, // Ensure image fills the container height too
+                    child: ClipRRect(
+                      // <-- ADD THIS WIDGET
+                      borderRadius: BorderRadius.circular(
+                        10,
+                      ), // <-- MATCH THE RADIUS
+                      child: Container(
+                        height: 200,
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        child: tempDocument == null
+                            ? const Text("No Preview Available")
+                            : Stack(
+                                children: [
+                                  Center(
+                                    child: tempDocument!.path.endsWith(".pdf")
+                                        ? const Icon(
+                                            Icons.picture_as_pdf,
+                                            color: Colors.red,
+                                            size: 50,
+                                          )
+                                        : Image.file(
+                                            tempDocument!,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height:
+                                                200, // Ensure image fills the container height too
+                                          ),
+                                  ),
+                                  // close button inside dotted border
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setStateSheet(() {
+                                          tempDocument = null;
+                                        });
+                                      },
+                                      child: CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.red,
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                              ),
-                              // close button inside dotted border
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: InkWell(
-                                  onTap: () {
-                                    setStateSheet(() {
-                                      tempDocument = null;
-                                    });
-                                  },
-                                  child: CircleAvatar(
-                                    radius: 12,
-                                    backgroundColor: Colors.red,
-                                    child: const Icon(
-                                      Icons.close,
-                                      size: 16,
-                                      color: Colors.white,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
+                      ),
+                    ), // <-- END ClipRRect
                   ),
-                ), // <-- END ClipRRect
+
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final XFile? image = await _picer.pickImage(
+                              source: ImageSource.camera,
+                            );
+                            if (image != null) {
+                              setStateSheet(() {
+                                tempDocument = File(image.path);
+                              });
+                            }
+                          },
+                          child: const Text("Pick Image"),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            FilePickerResult? result = await FilePicker.platform
+                                .pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: [
+                                    'pdf',
+                                    'jpg',
+                                    'jpeg',
+                                    'png',
+                                  ],
+                                );
+                            if (result != null &&
+                                result.files.single.path != null) {
+                              setStateSheet(() {
+                                tempDocument = File(result.files.single.path!);
+                              });
+                            }
+                          },
+                          child: const Text("Pick Document"),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Submit Button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: tempDocument == null
+                              ? null
+                              : () {
+                                  setState(() {
+                                    selectedDocument =
+                                        tempDocument; // ✅ Save selected file permanently
+                                  });
+                                  Navigator.pop(context); // Close bottom sheet
+
+                                  // Get.snackbar(
+                                  //   "Success",
+                                  //   "File selected successfully ✅",
+                                  //   backgroundColor: Colors.green,
+                                  //   colorText: Colors.white,
+                                  //   snackPosition: SnackPosition.BOTTOM,
+                                  // );
+                                },
+                          child: const Text("Submit"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final XFile? image = await _picer.pickImage(
-                                source: ImageSource.camera,
-                              );
-                              if (image != null) {
-                                setStateSheet(() {
-                                  tempDocument = File(image.path);
-                                });
-                              }
-                            },
-                            child: const Text("Pick Image"),
-                          ),
-                        ),
-                        SizedBox(width: 10,),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              FilePickerResult? result = await FilePicker.platform
-                                  .pickFiles(
-                                    type: FileType.custom,
-                                    allowedExtensions: [
-                                      'pdf',
-                                      'jpg',
-                                      'jpeg',
-                                      'png',
-                                    ],
-                                  );
-                              if (result != null &&
-                                  result.files.single.path != null) {
-                                setStateSheet(() {
-                                  tempDocument = File(result.files.single.path!);
-                                });
-                              }
-                            },
-                            child: const Text("Pick Document"),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Submit Button
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: tempDocument == null
-                                ? null
-                                : () {
-                                    setState(() {
-                                      selectedDocument =
-                                          tempDocument; // ✅ Save selected file permanently
-                                    });
-                                    Navigator.pop(context); // Close bottom sheet
-                          
-                                    // Get.snackbar(
-                                    //   "Success",
-                                    //   "File selected successfully ✅",
-                                    //   backgroundColor: Colors.green,
-                                    //   colorText: Colors.white,
-                                    //   snackPosition: SnackPosition.BOTTOM,
-                                    // );
-                                  },
-                            child: const Text("Submit"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      );
-    }
+            );
+          },
+        );
+      },
+    );
+  }
 
   // --- Dispose controllers ---
   @override

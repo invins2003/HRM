@@ -52,7 +52,6 @@ class FaceNetService {
 }
 // [End of FaceNetService class]
 
-
 // --- CORRECTED STATE CLASS ---
 
 class FaceProcessingScreen extends StatefulWidget {
@@ -102,7 +101,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     await _facenet.loadModel();
 
     _availableCameras = await availableCameras();
-    
+
     // --- DEFAULT TO FRONT CAMERA ---
     try {
       // Find the front camera
@@ -126,7 +125,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21 // Request NV21
+          ? ImageFormatGroup
+                .nv21 // Request NV21
           : ImageFormatGroup.bgra8888,
     );
 
@@ -172,7 +172,6 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         });
       }
       // -------------------------------------------
-
     } catch (e) {
       debugPrint("Error in image stream processing: $e");
     } finally {
@@ -183,7 +182,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   // Helper to create InputImage from CameraImage
   InputImage? _createInputImageFromCameraImage(CameraImage image) {
     if (_cameraController == null) return null;
-    
+
     // Tell ML Kit the format is NV21
     final InputImageFormat format = Platform.isAndroid
         ? InputImageFormat.nv21
@@ -191,9 +190,11 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
 
     // --- THIS IS THE FIX ---
     // Check for the format we actually requested (nv21)
-    if (image.format.group != (Platform.isAndroid 
-          ? ImageFormatGroup.nv21 // <--- MUST MATCH WHAT WE REQUESTED
-          : ImageFormatGroup.bgra8888)) {
+    if (image.format.group !=
+        (Platform.isAndroid
+            ? ImageFormatGroup
+                  .nv21 // <--- MUST MATCH WHAT WE REQUESTED
+            : ImageFormatGroup.bgra8888)) {
       debugPrint("Unexpected image format ${image.format.group}");
       return null;
     }
@@ -237,7 +238,15 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     if (_availableCameras == null || _availableCameras!.length < 2) return;
 
     // Stop stream before disposing
-    await _cameraController?.stopImageStream();
+    try {
+      if (_cameraController?.value.isStreamingImages == true) {
+        await _cameraController?.stopImageStream();
+      }
+    } catch (e) {
+      debugPrint(
+        "Warning: Camera stream already stopped or error stopping: $e",
+      );
+    }
     await _cameraController?.dispose();
 
     // Find the *other* camera
@@ -251,7 +260,8 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21 // Also apply here
+          ? ImageFormatGroup
+                .nv21 // Also apply here
           : ImageFormatGroup.bgra8888,
     );
 
@@ -302,8 +312,16 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
           _capturedEmbeddings.add(embedding);
           if (_capturedEmbeddings.length >= widget.maxCaptures) {
             // Stop stream when done
-            await _cameraController?.stopImageStream();
-            if(mounted) {
+            try {
+              if (_cameraController?.value.isStreamingImages == true) {
+                await _cameraController?.stopImageStream();
+              }
+            } catch (e) {
+              debugPrint(
+                "Warning: Camera stream already stopped or error stopping: $e",
+              );
+            }
+            if (mounted) {
               Navigator.pop(context, _capturedEmbeddings);
             }
           }
@@ -316,10 +334,10 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
     } catch (e) {
       debugPrint("Error capturing face: $e");
     } finally {
-      if(mounted) {
-         // Add a small delay before allowing another auto-capture
-         await Future.delayed(const Duration(milliseconds: 500));
-         setState(() => _isCapturing = false); // Clear flag
+      if (mounted) {
+        // Add a small delay before allowing another auto-capture
+        await Future.delayed(const Duration(milliseconds: 500));
+        setState(() => _isCapturing = false); // Clear flag
       }
     }
   }
@@ -327,7 +345,15 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
   @override
   void dispose() {
     // Stop stream before disposing controller
-    _cameraController?.stopImageStream();
+    try {
+      if (_cameraController?.value.isStreamingImages == true) {
+        _cameraController?.stopImageStream();
+      }
+    } catch (e) {
+      debugPrint(
+        "Warning: Camera stream already stopped or error stopping: $e",
+      );
+    }
     _cameraController?.dispose();
     _faceDetector.close();
     _facenet.dispose();
@@ -341,7 +367,7 @@ class _FaceProcessingScreenState extends State<FaceProcessingScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.green)),
       );
     }
-    
+
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return const Scaffold(
         body: Center(child: Text("Error: Camera not initialized.")),

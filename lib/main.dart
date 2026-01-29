@@ -3,7 +3,7 @@ import 'package:erp_admin/theme/themes.dart';
 import 'package:erp_admin/utils/InitialBindings.dart' as dep;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
+// import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
@@ -13,7 +13,7 @@ import 'module/MainScreen/MainScreen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EnvConfig.load();
-  await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
+  // await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,

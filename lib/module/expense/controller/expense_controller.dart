@@ -68,7 +68,15 @@ class ExpenseController extends GetxController {
     isLoading.value = true;
     dynamic result;
 
-    if (purchaseType == "Cash Purchase") {
+    print("🔹 CreateExpense called with purchaseType: $purchaseType");
+    print("🔹 Items: $items");
+    print("🔹 Files: ${files.keys.toList()}");
+
+    // Normalize the string for comparison
+    final normalizedType = purchaseType.trim().toLowerCase();
+
+    if (normalizedType == "cash purchase" || normalizedType == "cash") {
+      print("✅ Hitting Cash Purchase API...");
       result = await expenseRepo.createExpense(
         description: description,
         items: items,
@@ -77,6 +85,7 @@ class ExpenseController extends GetxController {
         purchaseType: purchaseType,
       );
     } else {
+      print("✅ Hitting Credit Purchase API...");
       result = await expenseRepo.createExpense(
         description: description,
         items: items,
@@ -88,6 +97,7 @@ class ExpenseController extends GetxController {
       );
     }
 
+    print("🔹 API Result: ${result?.success} - ${result?.message}");
     isLoading.value = false;
 
     if (result != null && result.success == true) {

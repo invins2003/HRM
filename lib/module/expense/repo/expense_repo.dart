@@ -7,14 +7,13 @@ import 'package:erp_admin/module/expense/model/request_fund_list_model.dart';
 import 'package:erp_admin/utils/ApiClient.dart';
 import 'package:erp_admin/utils/Constant.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/multipart/form_data.dart' hide FormData;
+import 'package:get/get_connect/http/src/multipart/form_data.dart'
+    hide FormData;
 import '../Model/expense_model.dart';
 import 'package:mime/mime.dart';
 
 class ExpenseRepo {
-  final ApiClient apiClient= ApiClient(appBaseUrl: Constants.BASEURL);
-
-
+  final ApiClient apiClient = ApiClient(appBaseUrl: Constants.BASEURL);
 
   Future<List<ExpenseCategory>> getExpenseCategories() async {
     try {
@@ -35,85 +34,79 @@ class ExpenseRepo {
     }
   }
 
+  Future<ExpenseModel?> createExpense({
+    required int categoryId,
+    required String description,
+    required List<Map<String, dynamic>> items,
+    required Map<String, MultipartFile> files,
+    required String purchaseType,
+    String? vendorName,
+    String? creditPurchaseType,
+  }) async {
+    try {
+      // Normalize the string for comparison
+      final normalizedType = purchaseType.trim().toLowerCase();
 
-Future<ExpenseModel?> createExpense({
-  required int categoryId,
-  required String description,
-  required List<Map<String, dynamic>> items,
-  required Map<String, MultipartFile> files,
-  required String purchaseType, 
-  String? vendorName, 
-  String? creditPurchaseType,
-}) async {
-  try {
+      if (normalizedType == "cash purchase" || normalizedType == "cash") {
+        print("🚀 [ExpenseRepo] Creating CASH Expense...");
+        final Map<String, dynamic> formMap = {
+          "category_id": categoryId,
+          "description": description,
+          "items": jsonEncode(items),
+          ...files,
+        };
+        final formData = FormData(formMap);
 
-     if(purchaseType == "Cash Purchase"){
-// Build the full FormData map
-     final Map<String, dynamic> formMap = {
-      "category_id": categoryId,
-      "description": description,
-      "items": jsonEncode(items), // send as JSON string
-      ...files,
-       // spread all files: item_document_0, item_document_1, etc.
-    };
-    final formData = FormData(formMap);
+        print("📡 POST to ${Constants.CREATEEXPENSE}");
+        final response = await apiClient.postDataWithFile(
+          Constants.CREATEEXPENSE,
+          formData,
+        );
+        print("📥 Response: ${response.statusCode} - ${response.body}");
 
-    final response = await apiClient.postDataWithFile(
-      Constants.CREATEEXPENSE,
-      formData,
-    );
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return ExpenseModel.fromJson(response.body);
+        } else {
+          return ExpenseModel(
+            success: response.body['success'],
+            message: "${response.body["message"]}",
+          );
+        }
+      } else {
+        print("🚀 [ExpenseRepo] Creating CREDIT Expense...");
+        final Map<String, dynamic> formMap = {
+          "category_id": categoryId,
+          "description": description,
+          "items": jsonEncode(items),
+          ...files,
+          "vendor_name": vendorName,
+          "type_of_supply_or_service": creditPurchaseType,
+        };
+        final formData = FormData(formMap);
 
-     if (response.statusCode == 200 || response.statusCode == 201) {
-      return ExpenseModel.fromJson(response.body);
-    } else {
-      return ExpenseModel(
-        success: response.body['success'],
-        message: "${response.body["message"]}",
-      );
+        print("📡 POST to ${Constants.CREDITEXPENSE}");
+        final response = await apiClient.postDataWithFile(
+          Constants.CREDITEXPENSE,
+          formData,
+        );
+        print("📥 Response: ${response.statusCode} - ${response.body}");
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return ExpenseModel.fromJson(response.body);
+        } else {
+          return ExpenseModel(
+            success: response.body['success'],
+            message: "${response.body["message"]}",
+          );
+        }
+      }
+    } catch (e) {
+      print("❌ Error in createExpense: $e");
+      return ExpenseModel(success: false, message: e.toString());
     }
-     }
-
-     else{
-      final Map<String, dynamic> formMap = {
-      "category_id": categoryId,
-      "description": description,
-      "items": jsonEncode(items), // send as JSON string
-      ...files,
-      "vendor_name":vendorName,
-      "type_of_supply_or_service":creditPurchaseType, 
-      // spread all files: item_document_0, item_document_1, etc.
-    };
-    final formData = FormData(formMap);
-
-    final response = await apiClient.postDataWithFile(
-      Constants.CREDITEXPENSE,
-      formData,
-    );
-
-     if (response.statusCode == 200 || response.statusCode == 201) {
-      return ExpenseModel.fromJson(response.body);
-    } else {
-      return ExpenseModel(
-        success: response.body['success'],
-        message: "${response.body["message"]}",
-      );
-    }
-     }
-    
-
-    
-
-   
-  } catch (e) {
-    print("Error in createExpense: $e");
-    return ExpenseModel(success: false, message:e.toString() );
   }
-}
 
-
-
-
-   Future<ExpenseResponse> fetchExpenses() async {
+  Future<ExpenseResponse> fetchExpenses() async {
     try {
       final response = await apiClient.getData(Constants.GETEXPENSE);
 
@@ -126,10 +119,9 @@ Future<ExpenseModel?> createExpense({
       print("Error in fetchExpenses: $e");
       return ExpenseResponse(success: false, data: []);
     }
-   }
+  }
 
-
-   Future<ExpenseResponse> fetchCreditExpenses() async {
+  Future<ExpenseResponse> fetchCreditExpenses() async {
     try {
       final response = await apiClient.getData(Constants.CREDITEXPENSE);
 
@@ -142,47 +134,44 @@ Future<ExpenseModel?> createExpense({
       print("Error in fetchExpenses: $e");
       return ExpenseResponse(success: false, data: []);
     }
-   }
+  }
 
+  Future<double?> fetchLatestBalance() async {
+    try {
+      final response = await apiClient.getData(Constants.GETBALANCE);
 
-   Future<double?> fetchLatestBalance() async {
-  try {
-    final response = await apiClient.getData(Constants.GETBALANCE);
+      if (response.statusCode == 200) {
+        // If ApiClient returns decoded JSON, don't decode again
+        final Map<String, dynamic> jsonData = response.body;
 
-    if (response.statusCode == 200) {
-      // If ApiClient returns decoded JSON, don't decode again
-      final Map<String, dynamic> jsonData = response.body;
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final data = jsonData['data'];
 
-      if (jsonData['success'] == true && jsonData['data'] != null) {
-        final data = jsonData['data'];
-
-        if (data is List && data.isNotEmpty) {
-          // If latest balance is first
-          final latestBalance = double.tryParse(data[0]['balance_after'].toString());
-          return latestBalance;
-        } else if (data is Map && data.containsKey('balance_after')) {
-          // If API returns a single object
-          return double.tryParse(data['balance_after'].toString());
+          if (data is List && data.isNotEmpty) {
+            // If latest balance is first
+            final latestBalance = double.tryParse(
+              data[0]['balance_after'].toString(),
+            );
+            return latestBalance;
+          } else if (data is Map && data.containsKey('balance_after')) {
+            // If API returns a single object
+            return double.tryParse(data['balance_after'].toString());
+          }
         }
       }
+      return null;
+    } catch (e) {
+      print("Error fetching branch wallet: $e");
+      return null;
     }
-    return null;
-  } catch (e) {
-    print("Error fetching branch wallet: $e");
-    return null;
   }
-}
 
-
-Future<FundRequestModel?> createFundRequest({
+  Future<FundRequestModel?> createFundRequest({
     required double amount,
     required String reason,
   }) async {
     try {
-      final body = {
-        "amount": amount,
-        "reason": reason,
-      };
+      final body = {"amount": amount, "reason": reason};
 
       final response = await apiClient.postData(Constants.FUNDREQUEST, body);
 
@@ -200,47 +189,43 @@ Future<FundRequestModel?> createFundRequest({
     }
   }
 
-
   Future<FundRequestListModel> fetchMyFundRequests() async {
-  try {
-    final response = await apiClient.getData(Constants.MYFUNDREQUEST);
+    try {
+      final response = await apiClient.getData(Constants.MYFUNDREQUEST);
 
-    if (response.statusCode == 200) {
-      return FundRequestListModel.fromJson(response.body);
-    } else {
+      if (response.statusCode == 200) {
+        return FundRequestListModel.fromJson(response.body);
+      } else {
+        return FundRequestListModel(success: false, data: []);
+      }
+    } catch (e) {
+      print("Error fetching fund requests: $e");
       return FundRequestListModel(success: false, data: []);
     }
-  } catch (e) {
-    print("Error fetching fund requests: $e");
-    return FundRequestListModel(success: false, data: []);
   }
-}
 
+  Future<Response> updateStatus({
+    required int id,
+    required String status,
+  }) async {
+    final body = {"status": status};
 
-Future<Response> updateStatus({
-  required int id,
-  required String status,
-}) async {
-  final body = {
-    "status": status,
-  };
+    try {
+      final response = await apiClient.patchData(
+        "${Constants.STATUSUPDATE}/$id/process",
+        body,
+      );
 
-  try {
-    final response = await apiClient.patchData(
-      "${Constants.STATUSUPDATE}/$id/process",
-      body,
-    );
+      if (response.statusCode == 200) {
+        print("✅ Fund request status updated successfully: $status");
+      } else {
+        print("⚠️ Failed to update status: ${response.statusCode}");
+      }
 
-    if (response.statusCode == 200) {
-      print("✅ Fund request status updated successfully: $status");
-    } else {
-      print("⚠️ Failed to update status: ${response.statusCode}");
+      return response;
+    } catch (e) {
+      print("❌ Error while updating fund request status: $e");
+      rethrow;
     }
-
-    return response;
-  } catch (e) {
-    print("❌ Error while updating fund request status: $e");
-    rethrow;
   }
-}
 }
